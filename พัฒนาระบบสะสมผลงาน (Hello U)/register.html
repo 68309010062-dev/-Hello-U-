@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello U - Register</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="checkin-page">
+
+    <div class="container theme-green">
+        <div class="logo">Hello U</div>
+        <h1>ลงทะเบียนสมาชิกใหม่</h1>
+        <p>กรอกข้อมูลของคุณเพื่อสร้างบัญชีผู้ใช้</p>
+        
+        <form id="registerForm">
+            <input type="text" id="regName" placeholder="ชื่อ-นามสกุล หรือ ชื่อเล่น..." required>
+            
+            <input type="email" id="regEmail" placeholder="อีเมลของคุณ (เช่น name@gmail.com)..." required>
+            
+            <input type="password" id="regPassword" placeholder="ตั้งรหัสผ่าน (อย่างน้อย 6 ตัว)..." required>
+            
+            <input type="password" id="regPasswordConfirm" placeholder="ยืนยันรหัสผ่านอีกครั้ง..." required>
+            
+            <button type="submit" class="btn">📝 บันทึกข้อมูลลงทะเบียน</button>
+        </form>
+
+        <div style="margin: 1.5rem 0; color: #cbd5e1; font-size: 0.9rem;">--- หรือ ---</div>
+
+        <button type="button" id="googleSignUpBtn" class="btn" style="background: #ffffff; color: #757575; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" style="width: 20px;">
+            สมัครใช้งานด้วยบัญชี Google
+        </button>
+
+        <p class="link-text">เป็นสมาชิกอยู่แล้ว? <a href="index.html">กลับไปหน้าเช็คอิน</a></p>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
