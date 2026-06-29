@@ -1,1 +1,34 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello U - Check-in</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="checkin-page">
 
+    <div class="container theme-blue">
+        <div class="logo">Hello U</div>
+        <h1>Check-in เข้าใช้งาน</h1>
+        <p>กรุณากรอกข้อมูลของคุณเพื่อเช็คอินเข้าสู่ระบบ</p>
+        
+        <form id="loginForm">
+            <input type="email" id="loginEmail" placeholder="พิมพ์อีเมลของคุณ..." required>
+            <input type="password" id="loginPassword" placeholder="พิมพ์รหัสผ่าน..." required>
+            <button type="submit" class="btn">📌 กดเพื่อ Check-in</button>
+        </form>
+
+        <div style="margin: 1.5rem 0; color: #cbd5e1; font-size: 0.9rem;">--- หรือ ---</div>
+
+        <button type="button" id="googleLoginBtn" class="btn" style="background: #ffffff; color: #757575; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" style="width: 20px;">
+            Check-in ด้วยบัญชี Google
+        </button>
+
+        <p class="link-text">ยังไม่มีชื่อในระบบ? <a href="register.html">ลงทะเบียนที่นี่</a></p>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
