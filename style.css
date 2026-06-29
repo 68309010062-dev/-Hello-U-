@@ -1,0 +1,101 @@
+/* --- ตั้งค่าพื้นฐาน --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #e0e7ff 0%, #ffffff 100%);
+    padding: 1rem;
+}
+
+/* --- กล่องแสดงผลหลัก --- */
+.container {
+    background: white;
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    max-width: 420px;
+    width: 100%;
+}
+
+.logo {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+}
+
+h1 {
+    font-size: 1.6rem;
+    margin-bottom: 0.5rem;
+    color: #0f172a;
+}
+
+p {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+}
+
+/* --- ฟอร์มอินพุต --- */
+input {
+    width: 100%;
+    padding: 0.8rem;
+    margin-bottom: 1.2rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 1rem;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.btn {
+    display: block;
+    width: 100%;
+    color: white;
+    padding: 0.9rem;
+    border: none;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.link-text {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.link-text a {
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.link-text a:hover {
+    text-decoration: underline;
+}
+
+/* --- คลาสแยกสีตามธีม (Blue สำหรับเช็คอิน / Green สำหรับลงทะเบียน) --- */
+.theme-blue .logo, .theme-blue .link-text a { color: #4f46e5; }
+.theme-blue input:focus { border-color: #4f46e5; }
+.theme-blue .btn { background: #4f46e5; }
+.theme-blue .btn:hover { background: #4338ca; box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4); }
+
+.theme-green .logo, .theme-green .link-text a { color: #10b981; }
+.theme-green input:focus { border-color: #10b981; }
+.theme-green .btn { background: #10b981; }
+.theme-green .btn:hover { background: #059669; box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4); }
