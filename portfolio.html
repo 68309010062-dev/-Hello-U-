@@ -3,23 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello U - Check-in</title>
+    <title>Hello U - Register</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="checkin-page">
 
-    <div class="container theme-blue">
+    <div class="container theme-green">
         <div class="logo">Hello U</div>
-        <h1>Check-in เข้าใช้งาน</h1>
-        <p>กรุณากรอกข้อมูลของคุณเพื่อเช็คอินเข้าสู่ระบบ</p>
+        <h1>ลงทะเบียนสมาชิกใหม่</h1>
+        <p>กรอกข้อมูลของคุณเพื่อสร้างบัญชีผู้ใช้</p>
         
-        <form id="loginForm">
-            <input type="email" id="loginEmail" placeholder="พิมพ์อีเมลของคุณ..." required>
-            <input type="password" id="loginPassword" placeholder="พิมพ์รหัสผ่าน..." required>
-            <button type="submit" class="btn">📌 กดเพื่อ Check-in</button>
+        <form id="registerForm">
+            <input type="text" id="regName" placeholder="ชื่อ-นามสกุล หรือ ชื่อเล่น..." required>
+            <input type="email" id="regEmail" placeholder="อีเมลของคุณ (เช่น name@gmail.com)..." required>
+            <input type="password" id="regPassword" placeholder="ตั้งรหัสผ่าน (อย่างน้อย 6 ตัว)..." required>
+            <input type="password" id="regPasswordConfirm" placeholder="ยืนยันรหัสผ่านอีกครั้ง..." required>
+            
+            <button type="submit" class="btn">📝 บันทึกข้อมูลลงทะเบียน</button>
         </form>
 
-        <p class="link-text">ยังไม่มีชื่อในระบบ? <a href="register.html">ลงทะเบียนที่นี่</a></p>
+        <p class="link-text">เป็นสมาชิกอยู่แล้ว? <a href="index.html">กลับไปหน้าเช็คอิน</a></p>
     </div>
 
     <script type="module" src="script.js"></script>
