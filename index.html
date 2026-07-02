@@ -3,23 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello U - Check-in</title>
+    <title>Hello U - เว็บไซต์เก็บสะสมผลงาน</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* สไตล์เพิ่มเติมสำหรับจัดการโลโก้ */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .logo-image {
+            max-width: 150px; /* ปรับขนาดโลโก้ตามต้องการ */
+            height: auto;
+        }
+    </style>
 </head>
 <body class="checkin-page">
 
     <div class="container theme-blue">
-        <div class="logo">Hello U</div>
-        <h1>Check-in เข้าใช้งาน</h1>
-        <p>กรุณากรอกข้อมูลของคุณเพื่อเช็คอินเข้าสู่ระบบ</p>
+        <div class="logo-container">
+            <img src="https://cdn.phototourl.com/free/2026-07-02-bf2530e4-cb2e-459f-93de-d59034eb5c2c.png">
+        </div>
+
+        <h1>เข้าสู่ระบบ</h1>
+        <p>ยินดีต้อนรับกลับมา! กรุณากรอกข้อมูลเพื่อเข้าใช้งาน</p>
         
         <form id="loginForm">
             <input type="email" id="loginEmail" placeholder="พิมพ์อีเมลของคุณ..." required>
             <input type="password" id="loginPassword" placeholder="พิมพ์รหัสผ่าน..." required>
-            <button type="submit" class="btn">📌 กดเพื่อ Check-in</button>
+            <button type="submit" class="btn">🚀 กดเพื่อเข้าสู่ระบบ</button>
         </form>
 
-        <p class="link-text">ยังไม่มีชื่อในระบบ? <a href="register.html">ลงทะเบียนที่นี่</a></p>
+        <p class="link-text">ยังไม่มีบัญชี? <a href="register.html">ลงทะเบียนที่นี่</a></p>
     </div>
 
     <script type="module" src="script.js"></script>
