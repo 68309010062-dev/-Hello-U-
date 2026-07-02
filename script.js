@@ -6,7 +6,7 @@ import {
     onAuthStateChanged,
     signOut 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"; // ลบ addDoc และ collection ที่ไม่ได้ใช้ออก
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // คอนฟิก Firebase ของโปรเจกต์คุณ
 const firebaseConfig = {
@@ -77,10 +77,10 @@ if (registerForm) {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
+            // บันทึกเฉพาะชื่อและอีเมล (เอา createdAt ที่เป็นวันที่เวลาออกแล้ว)
             await setDoc(doc(db, "users", user.uid), {
                 displayName: username,
-                email: email,
-                createdAt: new Date()
+                email: email
             });
 
             alert("🎉 ลงทะเบียนสำเร็จ!");
@@ -92,7 +92,7 @@ if (registerForm) {
 }
 
 // ==========================================
-// 4. ส่วนของการเข้าสู่ระบบ (หน้า index.html เดิมที่เป็นเช็คอิน)
+// 4. ส่วนของการเข้าสู่ระบบ (หน้า index.html)
 // ==========================================
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
@@ -103,13 +103,11 @@ if (loginForm) {
         const password = document.getElementById('loginPassword').value;
 
         try {
-            // ทำการเข้าสู่ระบบผ่าน Firebase Auth อย่างเดียว โดยไม่บันทึกประวัติเช็คอินลง Firestore แล้ว
+            // เข้าสู่ระบบตรงๆ ไม่มีการเรียกใช้หรือบันทึกวันเวลาใดๆ ทั้งสิ้น
             await signInWithEmailAndPassword(auth, email, password);
 
             alert("🎉 เข้าสู่ระบบสำเร็จ!");
             loginForm.reset();
-
-            // เปลี่ยนเส้นทางไปหน้าหลักทันที
             window.location.href = 'main.html';
         } catch (error) {
             console.error(error);
