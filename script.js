@@ -6,7 +6,7 @@ import {
     onAuthStateChanged,
     signOut 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"; // ลบ addDoc และ collection ที่ไม่ได้ใช้ออก
 
 // คอนฟิก Firebase ของโปรเจกต์คุณ
 const firebaseConfig = {
@@ -31,15 +31,12 @@ const loadingScreen = document.getElementById('loadingScreen');
 const userEmailText = document.getElementById('userEmail');
 
 if (mainContainer) {
-    // ฟังก์ชันนี้จะทำงานอัตโนมัติเมื่อเปิดหน้า main.html เพื่อเช็คว่าล็อกอินค้างไว้ไหม
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            // ถ้ามีผู้ใช้ล็อกอินอยู่จริง -> แสดงข้อมูลและหน้าหลัก
             if(userEmailText) userEmailText.innerText = user.email;
             if(loadingScreen) loadingScreen.style.display = 'none';
             mainContainer.style.display = 'block';
         } else {
-            // ถ้าไม่ได้ล็อกอิน (หรือแอบพิมพ์ลิงก์เข้ามาเอง) -> ดีดกลับหน้าแรก
             alert("🔒 กรุณาเข้าสู่ระบบก่อนใช้งานหน้าหลัก");
             window.location.href = 'index.html';
         }
@@ -95,7 +92,7 @@ if (registerForm) {
 }
 
 // ==========================================
-// 4. ส่วนของการเช็คอิน (หน้า index.html)
+// 4. ส่วนของการเข้าสู่ระบบ (หน้า index.html เดิมที่เป็นเช็คอิน)
 // ==========================================
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
@@ -106,26 +103,17 @@ if (loginForm) {
         const password = document.getElementById('loginPassword').value;
 
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
+            // ทำการเข้าสู่ระบบผ่าน Firebase Auth อย่างเดียว โดยไม่บันทึกประวัติเช็คอินลง Firestore แล้ว
+            await signInWithEmailAndPassword(auth, email, password);
 
-            await addDoc(collection(db, "checkin_history"), {
-                uid: user.uid,
-                email: user.email,
-                checkInAt: new Date()
-            });
-
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-
-            alert(`🎉 เช็คอินออนไลน์สำเร็จ!\nเวลาเช็คอิน: ${timeString} น.`);
+            alert("🎉 เข้าสู่ระบบสำเร็จ!");
             loginForm.reset();
 
-            // 🚀 เมื่อเช็คอินผ่าน ให้พาวิ่งไปหน้าหลักทันที
+            // เปลี่ยนเส้นทางไปหน้าหลักทันที
             window.location.href = 'main.html';
         } catch (error) {
             console.error(error);
-            alert("❌ ไม่สามารถเช็คอินได้! กรุณาตรวจสอบอีเมลและรหัสผ่านอีกครั้ง");
+            alert("❌ ไม่สามารถเข้าสู่ระบบได้! กรุณาตรวจสอบอีเมลและรหัสผ่านอีกครั้ง");
         }
     });
 }
