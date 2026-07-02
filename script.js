@@ -139,9 +139,6 @@ if (googleLoginBtn) {
             window.location.href = 'main.html';
         } catch (error) {
             console.error(error);
-            if (error.code !== 'auth/popup-closed-by-user') {
-                alert("❌ ไม่สามารถลงทะเบียนหรือเข้าสู่ระบบด้วย Google ได้: " + error.message);
-            }
         }
     });
 }
