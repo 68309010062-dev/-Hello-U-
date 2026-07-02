@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello U - เว็บไซต์เก็บสะสมผลงาน</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* สไตล์สำหรับจัดการโลโก้ */
         .logo-container {
@@ -17,39 +16,36 @@
             height: auto;
         }
 
-        /* 🎨 ปรับปรุงสไตล์ปุ่ม Google ใหม่ให้สวยงามขึ้น */
+        /* 🎨 ปรับปรุงสไตล์ปุ่ม Google ให้เป็นสีมาตรฐานและรูปทรงปกติ */
         .btn-google {
             background-color: #ffffff;
             color: #1f1f1f;
-            border: 1px solid #747775;
-            margin-top: 1.2rem;
+            border: 1px solid #dadce0; /* สีขอบเทาอ่อนมาตรฐาน Google */
+            margin-top: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
             width: 100%;
-            height: 44px; /* ปรับให้ความสูงเท่าๆ กับ Input และปุ่มทั่วไป */
-            border-radius: 22px; /* ทำมุมโค้งมนแบบมนยาว หรือปรับตามสไตล์เว็บคุณ (เช่น 8px หรือ 12px) */
+            height: 44px;
+            border-radius: 8px; /* 👈 ปรับขอบมนปกติให้เข้ากับสไตล์ปุ่มทั่วไป (ไม่ใช่ทรงแคปซูลแล้ว) */
             font-family: inherit;
             font-size: 0.95rem;
             font-weight: 500;
             cursor: pointer;
-            transition: background-color 0.2s, box-shadow 0.2s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            transition: background-color 0.2s;
         }
         
         .btn-google:hover {
             background-color: #f8fafc;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.12);
-            border-color: #5c5e5c;
+            border-color: #c6c9ce;
         }
 
-        .btn-google:active {
-            background-color: #f1f5f9;
-        }
-
-        .btn-google i {
-            font-size: 1.15rem;
+        /* จัดขนาดรูปไอคอน Google ด้านในปุ่ม */
+        .google-icon {
+            width: 18px;
+            height: 18px;
+            display: block;
         }
     </style>
 </head>
@@ -69,7 +65,8 @@
             <button type="submit" class="btn">🚀 กดเพื่อเข้าสู่ระบบ</button>
             
             <button type="button" id="googleLoginBtn" class="btn btn-google">
-                <i class="fab fa-google" style="color: #ea4335;"></i> เข้าสู่ระบบด้วย Google
+                <img class="google-icon" src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png" alt="Google Icon">
+                เข้าสู่ระบบด้วย Google
             </button>
         </form>
 
