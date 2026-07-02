@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello U - หน้าหลัก</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="checkin-page">
+
+    <div class="container theme-blue" id="mainContainer" style="display: none;">
+        <div class="logo">Hello U</div>
+        <h1>ยินดีต้อนรับเข้าสู่ระบบ</h1>
+        <p>สถานะของคุณ: <span style="color: #22c55e; font-weight: bold;">🟢 เช็คอินสำเร็จแล้ว</span></p>
+        
+        <div class="user-info" style="margin: 2rem 0; background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; text-align: left;">
+            <p style="margin: 0 0 0.5rem 0; color: #64748b;">📧 อีเมลผู้ใช้งาน:</p>
+            <h3 id="userEmail" style="margin: 0; color: #1e293b; word-break: break-all;">กำลังโหลด...</h3>
+        </div>
+
+        <button type="button" id="logoutBtn" class="btn" style="background: #ef4444;">🚪 ออกจากระบบ</button>
+    </div>
+
+    <div id="loadingScreen" style="color: #64748b; font-size: 1.2rem; text-align: center; margin-top: 20vh;">
+        กำลังตรวจสอบสิทธิ์การเข้าใช้งาน...
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
