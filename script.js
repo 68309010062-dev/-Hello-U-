@@ -4,7 +4,9 @@ import {
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword,
     onAuthStateChanged,
-    signOut 
+    signOut,
+    GoogleAuthProvider, // 👈 เพิ่มสิ่งนี้
+    signInWithPopup     // 👈 เพิ่มสิ่งนี้
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -22,6 +24,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app); 
+const googleProvider = new GoogleAuthProvider(); // 👈 สร้างตัวแปรเรียกใช้งาน Google Provider
 
 // ==========================================
 // 1. ระบบตรวจสอบสถานะผู้ใช้ (สำหรับหน้า main.html)
@@ -77,7 +80,6 @@ if (registerForm) {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // บันทึกเฉพาะชื่อและอีเมล (เอา createdAt ที่เป็นวันที่เวลาออกแล้ว)
             await setDoc(doc(db, "users", user.uid), {
                 displayName: username,
                 email: email
@@ -103,15 +105,42 @@ if (loginForm) {
         const password = document.getElementById('loginPassword').value;
 
         try {
-            // เข้าสู่ระบบตรงๆ ไม่มีการเรียกใช้หรือบันทึกวันเวลาใดๆ ทั้งสิ้น
             await signInWithEmailAndPassword(auth, email, password);
-
             alert("🎉 เข้าสู่ระบบสำเร็จ!");
             loginForm.reset();
             window.location.href = 'main.html';
         } catch (error) {
             console.error(error);
             alert("❌ ไม่สามารถเข้าสู่ระบบได้! กรุณาตรวจสอบอีเมลและรหัสผ่านอีกครั้ง");
+        }
+    });
+}
+
+// ==========================================
+// 5. ระบบเข้าสู่ระบบด้วย Google (Sign-in with Google)
+// ==========================================
+const googleLoginBtn = document.getElementById('googleLoginBtn');
+if (googleLoginBtn) {
+    googleLoginBtn.addEventListener('click', async () => {
+        try {
+            // เรียกเปิดหน้าต่างป็อปอัปของ Google เพื่อล็อกอิน
+            const result = await signInWithPopup(auth, googleProvider);
+            const user = result.user;
+
+            // บันทึกข้อมูลพื้นฐานลงใน Firestore เผื่อในกรณีที่เป็นผู้ใช้ใหม่ล็อกอินเข้ามาครั้งแรก
+            await setDoc(doc(db, "users", user.uid), {
+                displayName: user.displayName || "Google User",
+                email: user.email
+            }, { merge: true }); // ใช้ merge: true เพื่อไม่ให้ทับข้อมูลเก่าหากเขาสมัครไว้ก่อนแล้ว
+
+            alert("🎉 เข้าสู่ระบบด้วย Google สำเร็จ!");
+            window.location.href = 'main.html';
+        } catch (error) {
+            console.error(error);
+            // ตรวจสอบกรณีที่ผู้ใช้กดยกเลิกหรือปิดหน้าต่างป็อปอัปไปเอง
+            if (error.code !== 'auth/popup-closed-by-user') {
+                alert("❌ ไม่สามารถลงทะเบียนหรือเข้าสู่ระบบด้วย Google ได้: " + error.message);
+            }
         }
     });
 }
