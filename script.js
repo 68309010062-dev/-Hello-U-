@@ -127,17 +127,18 @@ if (googleLoginBtn) {
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
 
-            // บันทึกข้อมูลพื้นฐานลงใน Firestore เผื่อในกรณีที่เป็นผู้ใช้ใหม่ล็อกอินเข้ามาครั้งแรก
+            // บันทึกหรืออัปเดตข้อมูลผู้ใช้ลงในคอลเลกชัน users ให้ตรงสไตล์โครงสร้าง Firestore ของคุณ
             await setDoc(doc(db, "users", user.uid), {
-                displayName: user.displayName || "Google User",
-                email: user.email
-            }, { merge: true }); // ใช้ merge: true เพื่อไม่ให้ทับข้อมูลเก่าหากเขาสมัครไว้ก่อนแล้ว
+                authProvider: "google.com",              // 👈 ระบุประเภท Provider ให้ชัดเจน
+                displayName: user.displayName || "lol",   // ดึงชื่อโปรไฟล์จาก Google (หากไม่มีให้ระบุค่าเริ่มต้น)
+                email: user.email                         // ดึงอีเมลจาก Google
+                // หมายเหตุ: ละเว้น createdAt สำหรับผู้ใช้เก่าที่เคยเข้าสู่ระบบแล้ว เพื่อป้องกันการบันทึกเวลาสมัครทับซ้ำๆ
+            }, { merge: true }); // ใช้ merge: true เพื่ออัปเดตข้อมูลฟิลด์โดยไม่ไปลบฟิลด์อื่นที่มีอยู่เดิม
 
             alert("🎉 เข้าสู่ระบบด้วย Google สำเร็จ!");
             window.location.href = 'main.html';
         } catch (error) {
             console.error(error);
-            // ตรวจสอบกรณีที่ผู้ใช้กดยกเลิกหรือปิดหน้าต่างป็อปอัปไปเอง
             if (error.code !== 'auth/popup-closed-by-user') {
                 alert("❌ ไม่สามารถลงทะเบียนหรือเข้าสู่ระบบด้วย Google ได้: " + error.message);
             }
