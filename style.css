@@ -1,5 +1,5 @@
-/* --- สไตล์หลักและพื้นหลังไล่เฉดสีจากไฟล์รูปภาพของคุณ --- */
-body.main-page {
+/* --- 🟢 ปรับเป็นสไตล์หลักและพื้นหลังสำหรับทุกหน้าเว็บ --- */
+body {
     min-height: 100vh;
     background-image: url('image_bff387.png');
     background-size: cover;
@@ -11,7 +11,6 @@ body.main-page {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     -webkit-tap-highlight-color: transparent;
 }
-
 /* มุมมองโหลดข้อมูล */
 .loading-view {
     display: flex;
