@@ -31,8 +31,8 @@ const googleProvider = new GoogleAuthProvider();
 // ==========================================
 const mainContainer = document.getElementById('mainContainer');
 const loadingScreen = document.getElementById('loadingScreen');
-const userEmailText = document.getElementById('userEmail'); // สำหรับจุดเดิม (ถ้ามี)
-const headerUserName = document.getElementById('headerUserName'); // แถบชื่อผู้ใช้ด้านบนอันใหม่
+const userEmailText = document.getElementById('userEmail'); 
+const headerUserName = document.getElementById('headerUserName'); 
 
 // ตัวแปรควบคุม UI การเพิ่มผลงาน
 const addActionZone = document.getElementById('addActionZone');
@@ -72,7 +72,6 @@ if (mainContainer) {
         item.addEventListener('click', (e) => {
             const selectedType = item.getAttribute('data-type');
             
-            // ส่วนนี้คุณสามารถนำไปเขียนโค้ดเพื่อเปิดหน้าต่างกรอกข้อมูลของแต่ละประเภทได้ตามต้องการ
             alert(`คุณเลือกเพิ่มผลงานในรูปแบบ: ${selectedType}`);
             
             // ✨ เงื่อนไข: เมื่อเลือกประเภทเสร็จสิ้น ปิดกล่องตัวเลือก และซ่อนปุ่มเพิ่มผลงานทั้งหมดออกไปทันที
@@ -84,8 +83,17 @@ if (mainContainer) {
 }
 
 // ==========================================
-// 2. ระบบออกจากระบบ (Logout)
+// 2. ระบบไปหน้าตั้งค่า (Settings) & รองรับระบบออกจากระบบ (Logout)
 // ==========================================
+// ⚙️ ปุ่มฟันเฟืองเมื่อกดแล้วจะพาวิ่งไปที่หน้าตั้งค่า settings.html ทันทีตามต้องการ
+const settingsBtn = document.getElementById('settingsBtn');
+if (settingsBtn) {
+    settingsBtn.addEventListener('click', () => {
+        window.location.href = 'settings.html';
+    });
+}
+
+// 🚪 ฟังก์ชันออกจากระบบสแตนด์บายรอไว้ (สำหรับปุ่มที่มี id="logoutBtn" ภายในหน้า settings.html)
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
@@ -164,7 +172,6 @@ if (googleLoginBtn) {
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
 
-            // บันทึกข้อมูลหรืออัปเดตข้อมูลผู้ใช้ลงในคอลเลกชัน "users" 
             await setDoc(doc(db, "users", user.uid), {
                 authProvider: "google.com",
                 displayName: user.displayName || "Google User",
