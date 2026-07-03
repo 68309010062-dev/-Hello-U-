@@ -5,8 +5,8 @@ import {
     signInWithEmailAndPassword,
     onAuthStateChanged,
     signOut,
-    GoogleAuthProvider, // 👈 เพิ่มสิ่งนี้
-    signInWithPopup     // 👈 เพิ่มสิ่งนี้
+    GoogleAuthProvider,
+    signInWithPopup
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -24,25 +24,62 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app); 
-const googleProvider = new GoogleAuthProvider(); // 👈 สร้างตัวแปรเรียกใช้งาน Google Provider
+const googleProvider = new GoogleAuthProvider();
 
 // ==========================================
-// 1. ระบบตรวจสอบสถานะผู้ใช้ (สำหรับหน้า main.html)
+// 1. ระบบตรวจสอบสถานะผู้ใช้ และควบคุม UI หน้าหลัก (main.html)
 // ==========================================
 const mainContainer = document.getElementById('mainContainer');
 const loadingScreen = document.getElementById('loadingScreen');
-const userEmailText = document.getElementById('userEmail');
+const userEmailText = document.getElementById('userEmail'); // สำหรับจุดเดิม (ถ้ามี)
+const headerUserName = document.getElementById('headerUserName'); // แถบชื่อผู้ใช้ด้านบนอันใหม่
+
+// ตัวแปรควบคุม UI การเพิ่มผลงาน
+const addActionZone = document.getElementById('addActionZone');
+const uploadOptionsBox = document.getElementById('uploadOptionsBox');
+const addPortfolioBtn = document.getElementById('addPortfolioBtn');
+const floatingAddBtn = document.getElementById('floatingAddBtn');
+const optionItems = document.querySelectorAll('.option-item');
 
 if (mainContainer) {
     onAuthStateChanged(auth, (user) => {
         if (user) {
+            // แสดงข้อมูลผู้ใช้บนแถบแสดงผลด้านบน
+            if(headerUserName) headerUserName.innerText = user.displayName || user.email;
             if(userEmailText) userEmailText.innerText = user.email;
+            
             if(loadingScreen) loadingScreen.style.display = 'none';
             mainContainer.style.display = 'block';
         } else {
             alert("🔒 กรุณาเข้าสู่ระบบก่อนใช้งานหน้าหลัก");
             window.location.href = 'index.html';
         }
+    });
+
+    // ฟังก์ชันเปิดกล่อง "เพิ่มผลงานเป็น" (ตอนกดปุ่มบวก)
+    const openUploadOptions = () => {
+        if (uploadOptionsBox) {
+            uploadOptionsBox.style.display = 'block';
+        }
+    };
+
+    // ผูกเหตุการณ์ปุ่มบวกทั้ง 2 จุด ให้เปิดกล่องตัวเลือก
+    if (addPortfolioBtn) addPortfolioBtn.addEventListener('click', openUploadOptions);
+    if (floatingAddBtn) floatingAddBtn.addEventListener('click', openUploadOptions);
+
+    // เมื่อคลิกเลือกประเภทการเพิ่มผลงาน (ไฟล์ / ลิงก์ / กูเกิลไดรฟ์)
+    optionItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            const selectedType = item.getAttribute('data-type');
+            
+            // ส่วนนี้คุณสามารถนำไปเขียนโค้ดเพื่อเปิดหน้าต่างกรอกข้อมูลของแต่ละประเภทได้ตามต้องการ
+            alert(`คุณเลือกเพิ่มผลงานในรูปแบบ: ${selectedType}`);
+            
+            // ✨ เงื่อนไข: เมื่อเลือกประเภทเสร็จสิ้น ปิดกล่องตัวเลือก และซ่อนปุ่มเพิ่มผลงานทั้งหมดออกไปทันที
+            if (uploadOptionsBox) uploadOptionsBox.style.display = 'none';
+            if (addActionZone) addActionZone.style.display = 'none'; 
+            if (floatingAddBtn) floatingAddBtn.style.display = 'none';
+        });
     });
 }
 
@@ -63,7 +100,7 @@ if (logoutBtn) {
 }
 
 // ==========================================
-// 3. ส่วนของการลงทะเบียน (หน้า register.html)
+// 3. ส่วนของการลงทะเบียนปกติ (หน้า register.html)
 // ==========================================
 const registerForm = document.getElementById('registerForm');
 if (registerForm) {
@@ -81,6 +118,7 @@ if (registerForm) {
             const user = userCredential.user;
 
             await setDoc(doc(db, "users", user.uid), {
+                authProvider: "email/password",
                 displayName: username,
                 email: email
             });
@@ -94,7 +132,7 @@ if (registerForm) {
 }
 
 // ==========================================
-// 4. ส่วนของการเข้าสู่ระบบ (หน้า index.html)
+// 4. ส่วนของการเข้าสู่ระบบปกติ (หน้า index.html)
 // ==========================================
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
@@ -123,22 +161,23 @@ const googleLoginBtn = document.getElementById('googleLoginBtn');
 if (googleLoginBtn) {
     googleLoginBtn.addEventListener('click', async () => {
         try {
-            // เรียกเปิดหน้าต่างป็อปอัปของ Google เพื่อล็อกอิน
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
 
-            // บันทึกหรืออัปเดตข้อมูลผู้ใช้ลงในคอลเลกชัน users ให้ตรงสไตล์โครงสร้าง Firestore ของคุณ
+            // บันทึกข้อมูลหรืออัปเดตข้อมูลผู้ใช้ลงในคอลเลกชัน "users" 
             await setDoc(doc(db, "users", user.uid), {
-                authProvider: "google.com",              // 👈 ระบุประเภท Provider ให้ชัดเจน
-                displayName: user.displayName || "lol",   // ดึงชื่อโปรไฟล์จาก Google (หากไม่มีให้ระบุค่าเริ่มต้น)
-                email: user.email                         // ดึงอีเมลจาก Google
-                // หมายเหตุ: ละเว้น createdAt สำหรับผู้ใช้เก่าที่เคยเข้าสู่ระบบแล้ว เพื่อป้องกันการบันทึกเวลาสมัครทับซ้ำๆ
-            }, { merge: true }); // ใช้ merge: true เพื่ออัปเดตข้อมูลฟิลด์โดยไม่ไปลบฟิลด์อื่นที่มีอยู่เดิม
+                authProvider: "google.com",
+                displayName: user.displayName || "Google User",
+                email: user.email
+            }, { merge: true });
 
             alert("🎉 เข้าสู่ระบบด้วย Google สำเร็จ!");
             window.location.href = 'main.html';
         } catch (error) {
             console.error(error);
+            if (error.code !== 'auth/popup-closed-by-user') {
+                alert("❌ ไม่สามารถลงทะเบียนหรือเข้าสู่ระบบด้วย Google ได้: " + error.message);
+            }
         }
     });
 }
