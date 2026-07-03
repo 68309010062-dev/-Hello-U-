@@ -43,6 +43,7 @@ const floatingAddBtn = document.getElementById('floatingAddBtn');
 const optionItems = document.querySelectorAll('.option-item');
 
 if (mainContainer) {
+    // 🔒 ระบบตรวจสอบการล็อกอิน (ห้ามแตะต้องสไตล์หลุดสโคป)
     onAuthStateChanged(auth, (user) => {
         if (user) {
             if(headerUserName) headerUserName.innerText = user.displayName || user.email.split('@')[0];
@@ -53,33 +54,30 @@ if (mainContainer) {
             }
 
             if(loadingScreen) loadingScreen.style.display = 'none';
-            mainContainer.style.display = 'block';
+            mainContainer.style.display = 'block'; // แสดงผลหน้าเว็บปกติ
         } else {
             alert("🔒 กรุณาเข้าสู่ระบบก่อนใช้งานหน้าหลัก");
             window.location.href = 'index.html';
         }
     });
 
-    // ฟังก์ชันเปิดกล่อง "เพิ่มผลงานเป็น"
+    // 🎯 ฟังก์ชันสำหรับเปิดเมนูกล่องตัวเลือก
     const openUploadOptions = () => {
         if (uploadOptionsBox) {
             uploadOptionsBox.style.display = 'block';
-        }
-        // มั่นใจได้ว่าแถบปุ่มตัวใหญ่ด้านบนจะไม่หายไปตอนเปิดเมนู
-        if (addActionZone) {
-            addActionZone.style.display = 'block'; 
         }
     };
 
     if (addPortfolioBtn) addPortfolioBtn.addEventListener('click', openUploadOptions);
     if (floatingAddBtn) floatingAddBtn.addEventListener('click', openUploadOptions);
 
-    // เมื่อคลิกเลือกประเภทการเพิ่มผลงาน
+    // ⚡ ระบบประมวลผลการเลือกประเภท (ไฟล์ / ลิงก์ / ไดรฟ์)
     optionItems.forEach(item => {
         item.addEventListener('click', (e) => {
             const selectedType = item.getAttribute('data-type');
-            let isUploadSuccess = false; // ตั้งสถานะเริ่มต้นเป็น เท็จ (ยังไม่สำเร็จ)
+            let isUploadSuccess = false; 
 
+            // ฟังก์ชันคัดกรองเช็คโครงสร้าง URL ของ ลิงก์ และ ไดรฟ์
             const isValidUrl = (string) => {
                 try {
                     const url = new URL(string);
@@ -89,7 +87,7 @@ if (mainContainer) {
                 }
             };
 
-            // 📁 1. กรณีเลือกประเภท: ไฟล์
+            // 📁 [1] ปุ่มไฟล์: เรียกหน้าต่างจำลองการแทรกไฟล์ด้วย Google Drive
             if (selectedType === 'file') {
                 let confirmUpload = confirm("🔄 กำลังเรียกหน้าต่าง 'แทรกไฟล์โดยใช้ Google ไดรฟ์'\nต้องการเลือกไฟล์ชิ้นนี้แล้วกดปุ่ม 'เรียกดู' หรือไม่?");
                 if (confirmUpload) {
@@ -100,7 +98,7 @@ if (mainContainer) {
                 }
             }
             
-            // 🔗 2. กรณีเลือกประเภท: ลิงก์
+            // 🔗 [2] ปุ่มลิงก์: ต้องเป็น URL ที่ใช้ได้จริง
             else if (selectedType === 'link') {
                 let userLink = prompt("🔗 กรุณาวางลิงก์ผลงานของคุณ (เช่น https://example.com):");
                 if (userLink) {
@@ -115,7 +113,7 @@ if (mainContainer) {
                 }
             }
             
-            // 🤖 3. กรณีเลือกประเภท: กูเกิลไดรฟ์
+            // 🤖 [3] ปุ่มกูเกิลไดรฟ์: ต้องเป็น URL ที่ใช้ได้จริง
             else if (selectedType === 'drive') {
                 let driveLink = prompt("🤖 กรุณาวางลิงก์ Google Drive ของผลงานคุณ:");
                 if (driveLink) {
@@ -130,18 +128,41 @@ if (mainContainer) {
                 }
             }
 
-            // ⚡ เช็คผลลัพธ์ตรงนี้ ⚡
+            // 🎛️ ระบบควบคุมการ แสดงผล/ซ่อน ของปุ่มตามสถานะจริง
             if (isUploadSuccess) {
-                // ถ้าเพิ่ม "สำเร็จ" จริงๆ -> ซ่อนเมนูตัวเลือก และซ่อนแถบยาวด้านบนซะ
+                // 🟢 กรณีสำเร็จจริง: ซ่อนแถบเมนูตัวเลือก และแถบปุ่มยาวบนสุดทิ้งไป
                 if (uploadOptionsBox) uploadOptionsBox.style.display = 'none';
                 if (addActionZone) addActionZone.style.display = 'none'; 
-                // ส่วนปุ่มบวกกลมล่างขวา (floatingAddBtn) จะไม่มีคำสั่งซ่อน ทำให้ไม่หายไปไหนแน่นอนครับ!
+                // บันทึกคำสั่ง: ไม่ยุ่งกับ floatingAddBtn (ปุ่มบวกกลมล่างขวา) และ mainContainer (โครงสร้างพื้นหลัง) เด็ดขาด!
             } else {
-                // 🛑 ถ้ากดยกเลิก หรือทำไม่สำเร็จ (ยังไม่ได้อะไรเลย) -> ปิดแค่กล่องตัวเลือก แต่คงแถบปุ่มยาวบนไว้ให้กดใหม่ได้!
+                // 🔴 กรณีกดยกเลิก/ใส่ค่าผิด: ปิดแค่กล่องเมนูตัวเลือกย่อยลงไป แต่ทุกปุ่มและพื้นหลังต้องอยู่ครบเหมือนเดิม
                 if (uploadOptionsBox) uploadOptionsBox.style.display = 'none';
-                if (addActionZone) addActionZone.style.display = 'block'; // บังคับให้แถบปุ่มยาวยังคงอยู่
+                if (addActionZone) addActionZone.style.display = 'block'; 
             }
         });
+    });
+}
+
+// ==========================================
+// 2. ระบบไปหน้าตั้งค่า (Settings) & รองรับระบบออกจากระบบ (Logout)
+// ==========================================
+const settingsBtn = document.getElementById('settingsBtn');
+if (settingsBtn) {
+    settingsBtn.addEventListener('click', () => {
+        window.location.href = 'settings.html';
+    });
+}
+
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+            alert("🚪 ออกจากระบบเรียบร้อยแล้ว");
+            window.location.href = 'index.html';
+        } catch (error) {
+            alert("เกิดข้อผิดพลาดในการออกจากระบบ: " + error.message);
+        }
     });
 }
 
