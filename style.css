@@ -1,202 +1,127 @@
-/* --- ตั้งค่าพื้นฐานสำหรับอุปกรณ์เคลื่อนที่ --- */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    -webkit-tap-highlight-color: transparent; /* ลบแสงสีฟ้าเวลาใช้นิ้วจิ้มบนจอมือถือ */
-}
-
-body {
+/* --- สไตล์หลักและพื้นหลังไล่เฉดสีจากไฟล์รูปภาพของคุณ --- */
+body.main-page {
     min-height: 100vh;
-    background: linear-gradient(to bottom, #1e0a3d, #a200ff); /* 🔮 ปรับพื้นหลังธีมม่วงตามรูปหลัก */
+    background-image: url('image_bff387.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
     color: #ffffff;
-    padding: 0;
     margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    -webkit-tap-highlight-color: transparent;
 }
 
-/* --- สำหรับหน้าล็อกอิน / ลงทะเบียน (index.html & register.html) --- */
-/* ปรับให้เพจล็อกอินจัดอยู่ตรงกลางจอพอดี */
-.login-page {
+/* มุมมองโหลดข้อมูล */
+.loading-view {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 1.5rem;
+    min-height: 100vh;
+    font-size: 1.2rem;
 }
 
-.container {
-    background: white;
-    padding: 2.5rem 1.5rem;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    text-align: center;
-    max-width: 100%; /* ยืดหยุ่นตามหน้าจอมือถือ */
-    width: 100%;
-    color: #0f172a; /* ให้ข้อความในกล่องขาวเป็นสีเข้ม */
-}
-
-.container h1 {
-    font-size: 1.6rem;
-    margin-bottom: 0.5rem;
-    color: #0f172a;
-}
-
-.container p, .container .link-text {
-    color: #64748b;
-    font-size: 0.95rem;
-    margin-bottom: 1.5rem;
-}
-
-/* --- ฟอร์มอินพุตและปุ่มทั่วไปบนมือถือ --- */
-input {
-    width: 100%;
-    min-height: 48px; /* ขยายความสูงให้ใช้นิ้วจิ้มพิมพ์ง่ายขึ้น */
-    padding: 0.8rem;
-    margin-bottom: 1.2rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 10px;
-    font-size: 1rem;
-    text-align: center;
-    outline: none;
-    transition: border-color 0.3s;
-}
-
-.btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 50px; /* ขนาดมาตรฐานที่กดง่ายด้วยนิ้วโป้ง */
-    color: white;
-    padding: 0.9rem;
-    border: none;
-    border-radius: 50px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-/* บนมือถือจะใช้เอฟเฟกต์ :active แทน :hover เพื่อตอบสนองตอนนิ้วกด */
-.btn:active {
-    transform: scale(0.98); 
-}
-
-/* --- 🎨 ปรับปรุงสุ่ม Google สีปกติ ทรงมนเข้ากับช่องอินพุต --- */
-.btn-google {
-    background-color: #ffffff;
-    color: #1f1f1f;
-    border: 1px solid #dadce0;
-    margin-top: 1rem;
-    border-radius: 10px; /* มนเท่ากันกับกล่องอินพุต */
-    font-size: 1rem;
-    gap: 12px;
-}
-
-.btn-google:active {
-    background-color: #f1f5f9;
-}
-
-.google-icon {
-    width: 18px;
-    height: 18px;
-    display: block;
-}
-
-.link-text a {
-    text-decoration: none;
-    font-weight: 600;
-}
-
-/* ธีมเดิมที่มีอยู่ */
-.theme-blue .logo, .theme-blue .link-text a { color: #4f46e5; }
-.theme-blue input:focus { border-color: #4f46e5; }
-.theme-blue .btn { background: #4f46e5; }
-
-/* ========================================== */
-/* --- 📱 สำหรับหน้าหลักบนมือถือ (main.html) --- */
-/* ========================================== */
-
-/* แถบข้อมูลผู้ใช้ด้านบน */
+/* แถบหัวข้อผู้ใช้ด้านบน (กึ่งโปร่งแสงล้อไปกับพื้นหลังหลัก) */
 .header-bar {
-    background-color: #7b2cbf;
+    background: rgba(30, 10, 61, 0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     padding: 1.2rem 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom-left-radius: 15px;
-    border-bottom-right-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-meta p {
-    margin: 4px 0;
-    font-size: 1rem;
+    margin: 6px 0;
+    font-size: 1.1rem;
+    font-weight: bold;
     color: #ffffff;
 }
 
-.avatar-icon {
-    font-size: 2.8rem;
+/* กล่องจัดรูปภาพโปรไฟล์ให้เป็นวงกลมสวยงามตามตัวอย่าง */
+.avatar-box {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.avatar-box i {
+    font-size: 3.2rem;
     color: #ffffff;
 }
 
-/* ส่วนเนื้อหาหลัก */
+.avatar-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* โครงสร้างหน้าหลัก */
 .main-content {
     padding: 1.5rem;
 }
 
 h2.page-title {
-    font-size: 1.8rem;
-    margin-bottom: 1.5rem;
-    font-weight: 700;
+    font-size: 2.2rem;
+    margin: 1.5rem 0;
+    font-weight: bold;
+    letter-spacing: 0.5px;
 }
 
-/* ปุ่มเพิ่มผลงานหลักในหน้าแรก */
+/* ปุ่มกดเพื่อเพิ่มผลงานหลักในหน้าหลัก */
 .btn-add-portfolio {
     width: 100%;
-    min-height: 54px;
-    background-color: #4361ee;
-    color: white;
+    min-height: 56px;
+    background-color: #4169e1; /* สีฟ้าน้ำเงินสว่างตา */
+    color: #ffffff;
     border: none;
-    padding: 15px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    border-radius: 8px;
+    padding: 15px 20px;
+    font-size: 1.3rem;
+    font-weight: bold;
+    border-radius: 6px;
     cursor: pointer;
     text-align: left;
-    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* 📦 กล่องตัวเลือกประเภทผลงาน "เพิ่มผลงานเป็น" */
+/* 📦 กล่องตัวเลือกประเภทการอัปโหลด "เพิ่มผลงานเป็น" */
 .upload-options-box {
-    background-color: #5a80f1;
+    background-color: #6495ed; /* สีฟ้าสว่างล้อมรอบรายการ */
     padding: 1.5rem;
-    border-radius: 12px; /* ขอบมนขึ้นเข้ากับสไตล์โมบายพอร์ทัล */
-    display: none; /* ถูกควบคุมเปิด-ปิดผ่านสคริปต์ */
-    margin-top: 0.5rem;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    display: none; /* เริ่มต้นปิดการมองเห็น */
+    margin-top: 1rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .upload-options-box h3 {
     margin-top: 0;
-    margin-bottom: 1.2rem;
-    font-size: 1.3rem;
-    font-weight: 600;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: bold;
 }
 
-/* ไอเทมตัวเลือกย่อย (ไฟล์, ลิงก์, กูเกิลไดรฟ์) */
+/* แถบย่อยแต่ละรูปแบบ (ไฟล์, ลิงก์, ไดรฟ์) */
 .option-item {
-    background-color: #b55fe6;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 12px;
+    background-color: #bd5cf1; /* พื้นหลังสีม่วงสว่าง */
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-bottom: 14px;
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 16px;
     cursor: pointer;
-    font-size: 1.1rem;
-    font-weight: 500;
-    transition: background-color 0.1s;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #ffffff;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
 }
 
 .option-item:last-child {
@@ -204,48 +129,54 @@ h2.page-title {
 }
 
 .option-item:active {
-    background-color: #9d4edd; /* เปลี่ยนสีเมื่อใช้นิ้วสัมผัสกดลงไป */
+    background-color: #a846dc;
 }
 
-/* ⚙️ ปุ่มฟันเฟืองตั้งค่าล่างซ้าย */
+/* วงกลมรองรับไอคอนภายในปุ่มประเภทเพิ่มงาน */
+.option-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+}
+
+/* ⚙️ ปุ่มเฟืองล่างซ้ายแบบวงกลมมินิมอลตามดีไซน์ */
 .settings-btn {
     position: fixed;
-    bottom: 25px;
+    bottom: 30px;
     left: 25px;
-    background: #ffffff;
+    background: transparent;
     border: none;
-    color: #1e0a3d;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    font-size: 1.6rem;
+    color: #000000; /* เฟืองสีดำคมชัดตามรูปภาพโครงแบบ */
+    font-size: 2.8rem;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    z-index: 99;
 }
 
-/* ➕ ปุ่มวงกลมเครื่องหมายบวกลอยตัว ล่างขวา */
+/* ➕ ปุ่มเครื่องหมายบวกลอยตัวสีฟ้านีออนอ่อน ล่างขวา */
 .floating-add-btn {
     position: fixed;
     bottom: 25px;
     right: 25px;
-    background-color: #64dfdf;
-    color: #4361ee;
-    width: 65px;
-    height: 65px;
+    background-color: #7fffd4; /* สีฟ้านีออนสว่างเด่นชัดพริ้วกับนิ้วสัมผัส */
+    color: #4169e1;
+    width: 68px;
+    height: 68px;
     border-radius: 50%;
     border: none;
-    font-size: 2.2rem;
-    font-weight: bold;
+    font-size: 2.8rem;
+    font-weight: 300;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    z-index: 99;
 }
 
 .floating-add-btn:active, .settings-btn:active {
-    transform: scale(0.92); /* ยุบตัวลงเล็กน้อยเวลาใช้นิ้วกดเพิ่มความรู้สึกสมจริง */
+    transform: scale(0.9);
 }
