@@ -6,152 +6,65 @@
     <title>Hello U - หน้าหลัก</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* สไตล์จำลองตามภาพ UI ที่ส่งมา */
-        body {
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(to bottom, #1e0a3d, #a200ff);
-            min-height: 100vh;
-            color: #fff;
-            font-family: sans-serif;
-        }
-        .header-bar {
-            background-color: #7b2cbf;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .user-meta p {
-            margin: 4px 0;
-            font-size: 0.95rem;
-        }
-        .avatar-icon {
-            font-size: 2.5rem;
-        }
-        .main-content {
-            padding: 1.5rem;
-        }
-        h2.page-title {
-            font-size: 2rem;
-            margin-top: 0;
-        }
-        /* ปุ่มเพิ่มผลงานหลัก */
-        .btn-add-portfolio {
-            width: 100%;
-            background-color: #4361ee;
-            color: white;
-            border: none;
-            padding: 12px;
-            font-size: 1.2rem;
-            border-radius: 4px;
-            cursor: pointer;
-            text-align: left;
-            margin-bottom: 1.5rem;
-        }
-        /* กล่องตัวเลือกประเภทผลงาน (รูปที่ 2) */
-        .upload-options-box {
-            background-color: #5a80f1;
-            padding: 1.5rem;
-            border-radius: 4px;
-            display: none; /* ซ่อนไว้ก่อน เริ่มต้น */
-            margin-bottom: 1.5rem;
-        }
-        .upload-options-box h3 {
-            margin-top: 0;
-            margin-bottom: 1rem;
-            font-size: 1.4rem;
-        }
-        .option-item {
-            background-color: #b55fe6;
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            cursor: pointer;
-            font-size: 1.2rem;
-        }
-        .option-item:last-child {
-            margin-bottom: 0;
-        }
-        /* ปุ่มวงกลมเครื่องหมายบวก ด้านล่างขวา */
-        .floating-add-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #64dfdf;
-            color: #4361ee;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: none;
-            font-size: 2.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        /* ปุ่มฟันเฟืองตั้งค่าล่างซ้าย */
-        .settings-btn {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: none;
-            border: none;
-            color: #000;
-            font-size: 2rem;
-            cursor: pointer;
-        }
-    </style>
 </head>
-<body>
+<body class="main-page">
 
-    <div class="header-bar">
-        <div class="user-meta">
-            <p>ชื่อผู้ใช้: <span id="headerUserName">กำลังโหลด...</span></p>
-            <p>จำนวนผลงาน: <span id="portfolioCount">0</span> ชิ้น</p>
-        </div>
-        <div class="avatar-icon">
-            <i class="fas fa-user-circle"></i>
-        </div>
-    </div>
-
-    <div class="main-content" id="mainContainer" style="display: none;">
-        <h2 class="page-title">หน้าหลัก</h2>
-
-        <div id="addActionZone">
-            <button class="btn-add-portfolio" id="addPortfolioBtn">+เพิ่มผลงาน</button>
-        </div>
-
-        <div class="upload-options-box" id="uploadOptionsBox">
-            <h3>เพิ่มผลงานเป็น</h3>
-            
-            <div class="option-item" data-type="file">
-                <i class="fas fa-paperclip"></i> ไฟล์
+    <div id="mainContainer" style="display: none;">
+        
+        <div class="header-bar">
+            <div class="user-meta">
+                <p>ชื่อผู้ใช้: <span id="headerUserName">กำลังโหลด...</span></p>
+                <p>จำนวนผลงาน: <span id="portfolioCount">0</span></p>
             </div>
-            <div class="option-item" data-type="link">
-                <i class="fas fa-link"></i> ลิงก์
-            </div>
-            <div class="option-item" data-type="drive">
-                <i class="fab fa-google-drive"></i> กูเกิลไดรฟ์
+            <div class="avatar-box" id="avatarBox">
+                <i class="fas fa-user-circle"></i>
             </div>
         </div>
 
-        <div id="portfolioList"></div>
+        <div class="main-content">
+            <h2 class="page-title">หน้าหลัก</h2>
 
-        <button class="settings-btn" id="settingsBtn" title="ตั้งค่า" onclick="window.location.href='settings.html'">
-    <i class="fas fa-cog"></i>
-</button>
+            <div id="addActionZone">
+                <button class="btn-add-portfolio" id="addPortfolioBtn">+เพิ่มผลงาน</button>
+            </div>
+
+            <div class="upload-options-box" id="uploadOptionsBox">
+                <h3>เพิ่มผลงานเป็น</h3>
+                
+                <div class="option-item" data-type="file">
+                    <div class="option-icon-wrapper purple-bg">
+                        <i class="fas fa-paperclip"></i>
+                    </div>
+                    <span>ไฟล์</span>
+                </div>
+                
+                <div class="option-item" data-type="link">
+                    <div class="option-icon-wrapper purple-bg">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <span>ลิงก์</span>
+                </div>
+                
+                <div class="option-item" data-type="drive">
+                    <div class="option-icon-wrapper purple-bg">
+                        <i class="fab fa-google-drive"></i>
+                    </div>
+                    <span>กูเกิลไดรฟ์</span>
+                </div>
+            </div>
+
+            <div id="portfolioList"></div>
+        </div>
+
+        <button class="settings-btn" id="settingsBtn" title="ตั้งค่า">
+            <i class="fas fa-cog"></i>
+        </button>
 
         <button class="floating-add-btn" id="floatingAddBtn">+</button>
     </div>
 
-    <div id="loadingScreen" style="color: #fff; font-size: 1.2rem; text-align: center; margin-top: 40vh;">
-        กำลังตรวจสอบสิทธิ์การเข้าใช้งาน...
+    <div id="loadingScreen" class="loading-view">
+        <p>กำลังกำลังเชื่อมต่อข้อมูล...</p>
     </div>
 
     <script type="module" src="script.js"></script>
