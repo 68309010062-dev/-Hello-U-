@@ -43,7 +43,7 @@ const floatingAddBtn = document.getElementById('floatingAddBtn');
 const optionItems = document.querySelectorAll('.option-item');
 
 if (mainContainer) {
-    // 🔒 ระบบตรวจสอบการล็อกอิน (ห้ามแตะต้องสไตล์หลุดสโคป)
+    // 🔒 ระบบตรวจสอบการล็อกอิน 
     onAuthStateChanged(auth, (user) => {
         if (user) {
             if(headerUserName) headerUserName.innerText = user.displayName || user.email.split('@')[0];
@@ -54,7 +54,8 @@ if (mainContainer) {
             }
 
             if(loadingScreen) loadingScreen.style.display = 'none';
-            mainContainer.style.display = 'block'; // แสดงผลหน้าเว็บปกติ
+            // ✨ ปล่อยว่างไว้เพื่อให้หน้าเว็บดึงคุณสมบัติความสวยงามทั้งหมดมาจากไฟล์ CSS โดยไม่โดนเขียนทับ
+            mainContainer.style.display = ''; 
         } else {
             alert("🔒 กรุณาเข้าสู่ระบบก่อนใช้งานหน้าหลัก");
             window.location.href = 'index.html';
@@ -87,7 +88,7 @@ if (mainContainer) {
                 }
             };
 
-            // 📁 [1] ปุ่มไฟล์: เรียกหน้าต่างจำลองการแทรกไฟล์ด้วย Google Drive
+            // 📁 [1] ปุ่มไฟล์: เรียกหน้าต่างอินเตอร์เฟส Google Drive ตามตัวอย่างรูปภาพของคุณ
             if (selectedType === 'file') {
                 let confirmUpload = confirm("🔄 กำลังเรียกหน้าต่าง 'แทรกไฟล์โดยใช้ Google ไดรฟ์'\nต้องการเลือกไฟล์ชิ้นนี้แล้วกดปุ่ม 'เรียกดู' หรือไม่?");
                 if (confirmUpload) {
@@ -133,11 +134,10 @@ if (mainContainer) {
                 // 🟢 กรณีสำเร็จจริง: ซ่อนแถบเมนูตัวเลือก และแถบปุ่มยาวบนสุดทิ้งไป
                 if (uploadOptionsBox) uploadOptionsBox.style.display = 'none';
                 if (addActionZone) addActionZone.style.display = 'none'; 
-                // บันทึกคำสั่ง: ไม่ยุ่งกับ floatingAddBtn (ปุ่มบวกกลมล่างขวา) และ mainContainer (โครงสร้างพื้นหลัง) เด็ดขาด!
+                // ปุ่มบวกลอยตัวสีฟ้านีออน (floatingAddBtn) จะอยู่ถาวร ไม่โดนซ่อนแน่นอนครับ
             } else {
-                // 🔴 กรณีกดยกเลิก/ใส่ค่าผิด: ปิดแค่กล่องเมนูตัวเลือกย่อยลงไป แต่ทุกปุ่มและพื้นหลังต้องอยู่ครบเหมือนเดิม
+                // 🔴 กรณีกดยกเลิก/ใส่ค่าผิด: ปิดแค่กล่องเมนูตัวเลือกย่อยลงไป แต่ทุกอย่างบนเว็บรวมถึงพื้นหลังต้องอยู่ครบเหมือนเดิม
                 if (uploadOptionsBox) uploadOptionsBox.style.display = 'none';
-                if (addActionZone) addActionZone.style.display = 'block'; 
             }
         });
     });
