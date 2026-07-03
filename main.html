@@ -5,23 +5,152 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello U - หน้าหลัก</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* สไตล์จำลองตามภาพ UI ที่ส่งมา */
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #1e0a3d, #a200ff);
+            min-height: 100vh;
+            color: #fff;
+            font-family: sans-serif;
+        }
+        .header-bar {
+            background-color: #7b2cbf;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-meta p {
+            margin: 4px 0;
+            font-size: 0.95rem;
+        }
+        .avatar-icon {
+            font-size: 2.5rem;
+        }
+        .main-content {
+            padding: 1.5rem;
+        }
+        h2.page-title {
+            font-size: 2rem;
+            margin-top: 0;
+        }
+        /* ปุ่มเพิ่มผลงานหลัก */
+        .btn-add-portfolio {
+            width: 100%;
+            background-color: #4361ee;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 1.2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            margin-bottom: 1.5rem;
+        }
+        /* กล่องตัวเลือกประเภทผลงาน (รูปที่ 2) */
+        .upload-options-box {
+            background-color: #5a80f1;
+            padding: 1.5rem;
+            border-radius: 4px;
+            display: none; /* ซ่อนไว้ก่อน เริ่มต้น */
+            margin-bottom: 1.5rem;
+        }
+        .upload-options-box h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+        .option-item {
+            background-color: #b55fe6;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        .option-item:last-child {
+            margin-bottom: 0;
+        }
+        /* ปุ่มวงกลมเครื่องหมายบวก ด้านล่างขวา */
+        .floating-add-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #64dfdf;
+            color: #4361ee;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        /* ปุ่มฟันเฟืองตั้งค่าล่างซ้าย */
+        .settings-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: none;
+            border: none;
+            color: #000;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+    </style>
 </head>
-<body class="main-page">
+<body>
 
-    <div class="container theme-blue" id="mainContainer" style="display: none;">
-        <div class="logo">Hello U</div>
-        <h1>ยินดีต้อนรับเข้าสู่ระบบ</h1>
-        <p>ยินดีต้อนรับเข้าสู่ระบบจัดการและสะสมผลงานของคุณ</p>
-        
-        <div class="user-info" style="margin: 2rem 0; background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; text-align: left;">
-            <p style="margin: 0 0 0.5rem 0; color: #64748b;">📧 อีเมลผู้ใช้งาน:</p>
-            <h3 id="userEmail" style="margin: 0; color: #1e293b; word-break: break-all;">กำลังโหลด...</h3>
+    <div class="header-bar">
+        <div class="user-meta">
+            <p>ชื่อผู้ใช้: <span id="headerUserName">กำลังโหลด...</span></p>
+            <p>จำนวนผลงาน: <span id="portfolioCount">0</span> ชิ้น</p>
         </div>
-
-        <button type="button" id="logoutBtn" class="btn" style="background: #ef4444;">🚪 ออกจากระบบ</button>
+        <div class="avatar-icon">
+            <i class="fas fa-user-circle"></i>
+        </div>
     </div>
 
-    <div id="loadingScreen" style="color: #64748b; font-size: 1.2rem; text-align: center; margin-top: 20vh;">
+    <div class="main-content" id="mainContainer" style="display: none;">
+        <h2 class="page-title">หน้าหลัก</h2>
+
+        <div id="addActionZone">
+            <button class="btn-add-portfolio" id="addPortfolioBtn">+เพิ่มผลงาน</button>
+        </div>
+
+        <div class="upload-options-box" id="uploadOptionsBox">
+            <h3>เพิ่มผลงานเป็น</h3>
+            
+            <div class="option-item" data-type="file">
+                <i class="fas fa-paperclip"></i> ไฟล์
+            </div>
+            <div class="option-item" data-type="link">
+                <i class="fas fa-link"></i> ลิงก์
+            </div>
+            <div class="option-item" data-type="drive">
+                <i class="fab fa-google-drive"></i> กูเกิลไดรฟ์
+            </div>
+        </div>
+
+        <div id="portfolioList"></div>
+
+        <button class="settings-btn" id="logoutBtn" title="ออกจากระบบ">
+            <i class="fas fa-cog"></i>
+        </button>
+
+        <button class="floating-add-btn" id="floatingAddBtn">+</button>
+    </div>
+
+    <div id="loadingScreen" style="color: #fff; font-size: 1.2rem; text-align: center; margin-top: 40vh;">
         กำลังตรวจสอบสิทธิ์การเข้าใช้งาน...
     </div>
 
