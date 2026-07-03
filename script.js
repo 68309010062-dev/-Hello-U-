@@ -89,18 +89,18 @@ if (mainContainer) {
                 }
             };
 
-            // 📁 1. กรณีเลือกประเภท: ไฟล์
+            // 📁 1. ปุ่มไฟล์: เรียกหน้าต่างเลือก/อัปโหลดไฟล์จาก Google Drive
             if (selectedType === 'file') {
-                let fileName = prompt("📁 กรุณากรอกชื่อหรือระบุไฟล์ผลงานของคุณ:");
-                if (fileName && fileName.trim() !== "") {
+                let confirmUpload = confirm("🔄 กำลังเรียกหน้าต่าง 'แทรกไฟล์โดยใช้ Google ไดรฟ์'\nต้องการเลือกไฟล์ชิ้นนี้แล้วกดปุ่ม 'เรียกดู' หรือไม่?");
+                if (confirmUpload) {
                     isUploadSuccess = true;
-                    alert("🎉 เพิ่มไฟล์ผลงานสำเร็จ!");
+                    alert("🎉 อัปโหลดและแทรกไฟล์ผลงานสำเร็จ!");
                 } else {
-                    alert("❌ ยกเลิกการเพิ่มไฟล์ หรือข้อมูลเป็นว่าง");
+                    alert("❌ ยกเลิกการเลือกไฟล์");
                 }
             }
             
-            // 🔗 2. กรณีเลือกประเภท: ลิงก์ (เช็ค URL ที่ใช้งานได้จริงเท่านั้น)
+            // 🔗 2. ปุ่มลิงก์: ตรวจสอบ URL ที่ใช้งานได้จริงเท่านั้น
             else if (selectedType === 'link') {
                 let userLink = prompt("🔗 กรุณาวางลิงก์ผลงานของคุณ (เช่น https://example.com):");
                 if (userLink) {
@@ -115,7 +115,7 @@ if (mainContainer) {
                 }
             }
             
-            // 🤖 3. กรณีเลือกประเภท: กูเกิลไดรฟ์ (เช็ค URL ลิงก์ของไดรฟ์ที่ใช้งานได้จริงเช่นกัน)
+            // 🤖 3. ปุ่มกูเกิลไดรฟ์: ตรวจสอบ URL ลิงก์แชร์ที่ใช้งานได้จริงเท่านั้น
             else if (selectedType === 'drive') {
                 let driveLink = prompt("🤖 กรุณาวางลิงก์ Google Drive ของผลงานคุณ:");
                 if (driveLink) {
@@ -130,13 +130,12 @@ if (mainContainer) {
                 }
             }
 
-            // ✨ เงื่อนไขการหายไปของปุ่ม: ปิดกล่องตัวเลือก และซ่อนปุ่มเพิ่มผลงานทั้งหมดเมื่อทำรายการ "สำเร็จ" เท่านั้น
+            // ✨ เงื่อนไขการหายไปของปุ่มหลังทำรายการเสร็จสิ้น
             if (isUploadSuccess) {
-                if (uploadOptionsBox) uploadOptionsBox.style.display = 'none';
-                if (addActionZone) addActionZone.style.display = 'none'; 
-                if (floatingAddBtn) floatingAddBtn.style.display = 'none';
+                if (uploadOptionsBox) uploadOptionsBox.style.display = 'none'; // ซ่อนกล่องตัวเลือก
+                if (addActionZone) addActionZone.style.display = 'none';       // ซ่อนปุ่มแถบยาวบน
+                // 📌 เอาคำสั่งซ่อน floatingAddBtn ออกแล้ว เพื่อให้ปุ่มบวกกลมล่างขวายังคงอยู่เสมือนเดิมตามต้องการ
             } else {
-                // หากกดยกเลิกหรือกรอกลิงก์ไม่ถูกต้อง ให้ปิดแค่กล่องตัวเลือก แต่คงปุ่มกดไว้ให้คลิกใหม่ได้
                 if (uploadOptionsBox) uploadOptionsBox.style.display = 'none';
             }
         });
