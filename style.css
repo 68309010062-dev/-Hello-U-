@@ -1,52 +1,56 @@
-/* --- ตั้งค่าพื้นฐาน --- */
+/* --- ตั้งค่าพื้นฐานสำหรับอุปกรณ์เคลื่อนที่ --- */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    -webkit-tap-highlight-color: transparent; /* ลบแสงสีฟ้าเวลาใช้นิ้วจิ้มบนจอมือถือ */
 }
 
 body {
     min-height: 100vh;
+    background: linear-gradient(to bottom, #1e0a3d, #a200ff); /* 🔮 ปรับพื้นหลังธีมม่วงตามรูปหลัก */
+    color: #ffffff;
+    padding: 0;
+    margin: 0;
+}
+
+/* --- สำหรับหน้าล็อกอิน / ลงทะเบียน (index.html & register.html) --- */
+/* ปรับให้เพจล็อกอินจัดอยู่ตรงกลางจอพอดี */
+.login-page {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(135deg, #e0e7ff 0%, #ffffff 100%);
-    padding: 1rem;
+    padding: 1.5rem;
 }
 
-/* --- กล่องแสดงผลหลัก --- */
 .container {
     background: white;
-    padding: 3rem 2rem;
+    padding: 2.5rem 1.5rem;
     border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     text-align: center;
-    max-width: 420px;
+    max-width: 100%; /* ยืดหยุ่นตามหน้าจอมือถือ */
     width: 100%;
+    color: #0f172a; /* ให้ข้อความในกล่องขาวเป็นสีเข้ม */
 }
 
-.logo {
-    font-size: 3rem;
-    font-weight: 800;
-    margin-bottom: 1rem;
-}
-
-h1 {
+.container h1 {
     font-size: 1.6rem;
     margin-bottom: 0.5rem;
     color: #0f172a;
 }
 
-p {
+.container p, .container .link-text {
     color: #64748b;
     font-size: 0.95rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 
-/* --- ฟอร์มอินพุต --- */
+/* --- ฟอร์มอินพุตและปุ่มทั่วไปบนมือถือ --- */
 input {
     width: 100%;
+    min-height: 48px; /* ขยายความสูงให้ใช้นิ้วจิ้มพิมพ์ง่ายขึ้น */
     padding: 0.8rem;
     margin-bottom: 1.2rem;
     border: 2px solid #e2e8f0;
@@ -58,8 +62,11 @@ input {
 }
 
 .btn {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
+    min-height: 50px; /* ขนาดมาตรฐานที่กดง่ายด้วยนิ้วโป้ง */
     color: white;
     padding: 0.9rem;
     border: none;
@@ -67,17 +74,33 @@ input {
     font-size: 1.1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s;
 }
 
-.btn:hover {
-    transform: translateY(-2px);
+/* บนมือถือจะใช้เอฟเฟกต์ :active แทน :hover เพื่อตอบสนองตอนนิ้วกด */
+.btn:active {
+    transform: scale(0.98); 
 }
 
-.link-text {
-    margin-top: 1.5rem;
-    font-size: 0.9rem;
-    color: #64748b;
+/* --- 🎨 ปรับปรุงสุ่ม Google สีปกติ ทรงมนเข้ากับช่องอินพุต --- */
+.btn-google {
+    background-color: #ffffff;
+    color: #1f1f1f;
+    border: 1px solid #dadce0;
+    margin-top: 1rem;
+    border-radius: 10px; /* มนเท่ากันกับกล่องอินพุต */
+    font-size: 1rem;
+    gap: 12px;
+}
+
+.btn-google:active {
+    background-color: #f1f5f9;
+}
+
+.google-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
 }
 
 .link-text a {
@@ -85,17 +108,144 @@ input {
     font-weight: 600;
 }
 
-.link-text a:hover {
-    text-decoration: underline;
-}
-
-/* --- คลาสแยกสีตามธีม (Blue สำหรับเช็คอิน / Green สำหรับลงทะเบียน) --- */
+/* ธีมเดิมที่มีอยู่ */
 .theme-blue .logo, .theme-blue .link-text a { color: #4f46e5; }
 .theme-blue input:focus { border-color: #4f46e5; }
 .theme-blue .btn { background: #4f46e5; }
-.theme-blue .btn:hover { background: #4338ca; box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4); }
 
-.theme-green .logo, .theme-green .link-text a { color: #10b981; }
-.theme-green input:focus { border-color: #10b981; }
-.theme-green .btn { background: #10b981; }
-.theme-green .btn:hover { background: #059669; box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4); }
+/* ========================================== */
+/* --- 📱 สำหรับหน้าหลักบนมือถือ (main.html) --- */
+/* ========================================== */
+
+/* แถบข้อมูลผู้ใช้ด้านบน */
+.header-bar {
+    background-color: #7b2cbf;
+    padding: 1.2rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.user-meta p {
+    margin: 4px 0;
+    font-size: 1rem;
+    color: #ffffff;
+}
+
+.avatar-icon {
+    font-size: 2.8rem;
+    color: #ffffff;
+}
+
+/* ส่วนเนื้อหาหลัก */
+.main-content {
+    padding: 1.5rem;
+}
+
+h2.page-title {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+}
+
+/* ปุ่มเพิ่มผลงานหลักในหน้าแรก */
+.btn-add-portfolio {
+    width: 100%;
+    min-height: 54px;
+    background-color: #4361ee;
+    color: white;
+    border: none;
+    padding: 15px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+}
+
+/* 📦 กล่องตัวเลือกประเภทผลงาน "เพิ่มผลงานเป็น" */
+.upload-options-box {
+    background-color: #5a80f1;
+    padding: 1.5rem;
+    border-radius: 12px; /* ขอบมนขึ้นเข้ากับสไตล์โมบายพอร์ทัล */
+    display: none; /* ถูกควบคุมเปิด-ปิดผ่านสคริปต์ */
+    margin-top: 0.5rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+.upload-options-box h3 {
+    margin-top: 0;
+    margin-bottom: 1.2rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+/* ไอเทมตัวเลือกย่อย (ไฟล์, ลิงก์, กูเกิลไดรฟ์) */
+.option-item {
+    background-color: #b55fe6;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 500;
+    transition: background-color 0.1s;
+}
+
+.option-item:last-child {
+    margin-bottom: 0;
+}
+
+.option-item:active {
+    background-color: #9d4edd; /* เปลี่ยนสีเมื่อใช้นิ้วสัมผัสกดลงไป */
+}
+
+/* ⚙️ ปุ่มฟันเฟืองตั้งค่าล่างซ้าย */
+.settings-btn {
+    position: fixed;
+    bottom: 25px;
+    left: 25px;
+    background: #ffffff;
+    border: none;
+    color: #1e0a3d;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 1.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+/* ➕ ปุ่มวงกลมเครื่องหมายบวกลอยตัว ล่างขวา */
+.floating-add-btn {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background-color: #64dfdf;
+    color: #4361ee;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    border: none;
+    font-size: 2.2rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.floating-add-btn:active, .settings-btn:active {
+    transform: scale(0.92); /* ยุบตัวลงเล็กน้อยเวลาใช้นิ้วกดเพิ่มความรู้สึกสมจริง */
+}
