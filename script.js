@@ -29,7 +29,6 @@ const googleProvider = new GoogleAuthProvider();
 // ==========================================
 // 1. ระบบตรวจสอบสถานะผู้ใช้ และควบคุม UI หน้าหลัก (main.html)
 // ==========================================
-const mainContainer = document.getElementById('mainContainer');
 const loadingScreen = document.getElementById('loadingScreen');
 const userEmailText = document.getElementById('userEmail'); 
 const headerUserName = document.getElementById('headerUserName'); 
@@ -42,106 +41,105 @@ const addPortfolioBtn = document.getElementById('addPortfolioBtn');
 const floatingAddBtn = document.getElementById('floatingAddBtn');
 const optionItems = document.querySelectorAll('.option-item');
 
-if (mainContainer) {
-    // 🔒 ระบบตรวจสอบการล็อกอิน 
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            if(headerUserName) headerUserName.innerText = user.displayName || user.email.split('@')[0];
-            if(userEmailText) userEmailText.innerText = user.email;
-            
-            if (avatarBox && user.photoURL) {
-                avatarBox.innerHTML = `<img src="${user.photoURL}" alt="User Profile" referrerpolicy="no-referrer" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-            }
-
-            if(loadingScreen) loadingScreen.style.display = 'none';
-            // ✨ ปล่อยว่างไว้เพื่อให้หน้าเว็บดึงคุณสมบัติความสวยงามทั้งหมดมาจากไฟล์ CSS โดยไม่โดนเขียนทับ
-            mainContainer.style.display = ''; 
-        } else {
-            alert("🔒 กรุณาเข้าสู่ระบบก่อนใช้งานหน้าหลัก");
-            window.location.href = 'index.html';
+// 🔒 ระบบตรวจสอบการล็อกอิน
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        if(headerUserName) headerUserName.innerText = user.displayName || user.email.split('@')[0];
+        if(userEmailText) userEmailText.innerText = user.email;
+        
+        if (avatarBox && user.photoURL) {
+            avatarBox.innerHTML = `<img src="${user.photoURL}" alt="User Profile" referrerpolicy="no-referrer" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
         }
-    });
 
-    // 🎯 ฟังก์ชันสำหรับเปิดเมนูกล่องตัวเลือก
-    const openUploadOptions = () => {
-        if (uploadOptionsBox) {
-            uploadOptionsBox.style.display = 'block';
+        // 🟢 เมื่อโหลดเสร็จ ให้ลบเฉพาะฉาก Loading ทิ้งไปอย่างเดียว (ไม่สั่งทับ display ของตัวหลักแล้ว สไตล์จะไม่หายแน่นอน)
+        if(loadingScreen) {
+            loadingScreen.style.display = 'none';
         }
-    };
+    } else {
+        alert("🔒 กรุณาเข้าสู่ระบบก่อนใช้งานหน้าหลัก");
+        window.location.href = 'index.html';
+    }
+});
 
-    if (addPortfolioBtn) addPortfolioBtn.addEventListener('click', openUploadOptions);
-    if (floatingAddBtn) floatingAddBtn.addEventListener('click', openUploadOptions);
+// 🎯 ฟังก์ชันสำหรับเปิดเมนูกล่องตัวเลือก
+const openUploadOptions = () => {
+    if (uploadOptionsBox) {
+        uploadOptionsBox.style.display = 'block';
+    }
+};
 
-    // ⚡ ระบบประมวลผลการเลือกประเภท (ไฟล์ / ลิงก์ / ไดรฟ์)
-    optionItems.forEach(item => {
-        item.addEventListener('click', (e) => {
-            const selectedType = item.getAttribute('data-type');
-            let isUploadSuccess = false; 
+if (addPortfolioBtn) addPortfolioBtn.addEventListener('click', openUploadOptions);
+if (floatingAddBtn) floatingAddBtn.addEventListener('click', openUploadOptions);
 
-            // ฟังก์ชันคัดกรองเช็คโครงสร้าง URL ของ ลิงก์ และ ไดรฟ์
-            const isValidUrl = (string) => {
-                try {
-                    const url = new URL(string);
-                    return url.protocol === "http:" || url.protocol === "https:";
-                } catch (_) {
-                    return false;  
-                }
-            };
+// ⚡ ระบบประมวลผลการเลือกประเภท (ไฟล์ / ลิงก์ / ไดรฟ์)
+optionItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+        const selectedType = item.getAttribute('data-type');
+        let isUploadSuccess = false; 
 
-            // 📁 [1] ปุ่มไฟล์: เรียกหน้าต่างอินเตอร์เฟส Google Drive ตามตัวอย่างรูปภาพของคุณ
-            if (selectedType === 'file') {
-                let confirmUpload = confirm("🔄 กำลังเรียกหน้าต่าง 'แทรกไฟล์โดยใช้ Google ไดรฟ์'\nต้องการเลือกไฟล์ชิ้นนี้แล้วกดปุ่ม 'เรียกดู' หรือไม่?");
-                if (confirmUpload) {
-                    isUploadSuccess = true;
-                    alert("🎉 อัปโหลดและแทรกไฟล์ผลงานสำเร็จ!");
-                } else {
-                    alert("❌ ยกเลิกการเลือกไฟล์");
-                }
+        // ฟังก์ชันคัดกรองเช็คโครงสร้าง URL ของ ลิงก์ และ ไดรฟ์
+        const isValidUrl = (string) => {
+            try {
+                const url = new URL(string);
+                return url.protocol === "http:" || url.protocol === "https:";
+            } catch (_) {
+                return false;  
             }
-            
-            // 🔗 [2] ปุ่มลิงก์: ต้องเป็น URL ที่ใช้ได้จริง
-            else if (selectedType === 'link') {
-                let userLink = prompt("🔗 กรุณาวางลิงก์ผลงานของคุณ (เช่น https://example.com):");
-                if (userLink) {
-                    if (isValidUrl(userLink.trim())) {
-                        isUploadSuccess = true;
-                        alert("🎉 เพิ่มลิงก์ผลงานสำเร็จ!");
-                    } else {
-                        alert("❌ ลิงก์ไม่ถูกต้อง! กรุณากรอกลิงก์ที่มี http:// หรือ https://");
-                    }
-                } else {
-                    alert("❌ ยกเลิกการเพิ่มลิงก์");
-                }
-            }
-            
-            // 🤖 [3] ปุ่มกูเกิลไดรฟ์: ต้องเป็น URL ที่ใช้ได้จริง
-            else if (selectedType === 'drive') {
-                let driveLink = prompt("🤖 กรุณาวางลิงก์ Google Drive ของผลงานคุณ:");
-                if (driveLink) {
-                    if (isValidUrl(driveLink.trim())) {
-                        isUploadSuccess = true;
-                        alert("🎉 เชื่อมต่อข้อมูล Google Drive สำเร็จ!");
-                    } else {
-                        alert("❌ ลิงก์ไม่ถูกต้อง! กรุณากรอกลิงก์ที่ใช้งานได้จริง");
-                    }
-                } else {
-                    alert("❌ ยกเลิกการเพิ่มกูเกิลไดรฟ์");
-                }
-            }
+        };
 
-            // 🎛️ ระบบควบคุมการ แสดงผล/ซ่อน ของปุ่มตามสถานะจริง
-            if (isUploadSuccess) {
-                // 🟢 กรณีสำเร็จจริง: ซ่อนแถบเมนูตัวเลือก และแถบปุ่มยาวบนสุดทิ้งไป
-                if (uploadOptionsBox) uploadOptionsBox.style.display = 'none';
-                if (addActionZone) addActionZone.style.display = 'none'; 
-                // ปุ่มบวกลอยตัวสีฟ้านีออน (floatingAddBtn) จะอยู่ถาวร ไม่โดนซ่อนแน่นอนครับ
+        // 📁 [1] ปุ่มไฟล์: เรียกหน้าต่างอินเตอร์เฟส Google Drive ตามรูปภาพของคุณ
+        if (selectedType === 'file') {
+            let confirmUpload = confirm("🔄 กำลังเรียกหน้าต่าง 'แทรกไฟล์โดยใช้ Google ไดรฟ์'\nต้องการเลือกไฟล์ชิ้นนี้แล้วกดปุ่ม 'เรียกดู' หรือไม่?");
+            if (confirmUpload) {
+                isUploadSuccess = true;
+                alert("🎉 อัปโหลดและแทรกไฟล์ผลงานสำเร็จ!");
             } else {
-                // 🔴 กรณีกดยกเลิก/ใส่ค่าผิด: ปิดแค่กล่องเมนูตัวเลือกย่อยลงไป แต่ทุกอย่างบนเว็บรวมถึงพื้นหลังต้องอยู่ครบเหมือนเดิม
-                if (uploadOptionsBox) uploadOptionsBox.style.display = 'none';
+                alert("❌ ยกเลิกการเลือกไฟล์");
             }
-        });
+        }
+        
+        // 🔗 [2] ปุ่มลิงก์: ต้องเป็น URL ที่ใช้ได้จริง
+        else if (selectedType === 'link') {
+            let userLink = prompt("🔗 กรุณาวางลิงก์ผลงานของคุณ (เช่น https://example.com):");
+            if (userLink) {
+                if (isValidUrl(userLink.trim())) {
+                    isUploadSuccess = true;
+                    alert("🎉 เพิ่มลิงก์ผลงานสำเร็จ!");
+                } else {
+                    alert("❌ ลิงก์ไม่ถูกต้อง! กรุณากรอกลิงก์ที่มี http:// หรือ https://");
+                }
+            } else {
+                alert("❌ ยกเลิกการเพิ่มลิงก์");
+            }
+        }
+        
+        // 🤖 [3] ปุ่มกูเกิลไดรฟ์: ต้องเป็น URL ที่ใช้ได้จริง
+        else if (selectedType === 'drive') {
+            let driveLink = prompt("🤖 กรุณาวางลิงก์ Google Drive ของผลงานคุณ:");
+            if (driveLink) {
+                if (isValidUrl(driveLink.trim())) {
+                    isUploadSuccess = true;
+                    alert("🎉 เชื่อมต่อข้อมูล Google Drive สำเร็จ!");
+                } else {
+                    alert("❌ ลิงก์ไม่ถูกต้อง! กรุณากรอกลิงก์ที่ใช้งานได้จริง");
+                }
+            } else {
+                alert("❌ ยกเลิกการเพิ่มกูเกิลไดรฟ์");
+            }
+        }
+
+        // 🎛️ ระบบควบคุมการ แสดงผล/ซ่อน ของปุ่มตามสถานะจริง
+        if (isUploadSuccess) {
+            // 🟢 กรณีสำเร็จจริง: ซ่อนแถบเมนูตัวเลือก และแถบปุ่มยาวบนสุดทิ้งไป
+            if (uploadOptionsBox) uploadOptionsBox.style.display = 'none';
+            if (addActionZone) addActionZone.style.display = 'none'; 
+            // 📌 ปุ่มเครื่องหมายบวกลอยตัวมุมขวา (floatingAddBtn) จะไม่มีวันหาย อยู่ถาวรตามบรีฟ
+        } else {
+            // 🔴 กรณีกดยกเลิก/ใส่ค่าผิด: ปิดแค่กล่องเมนูตัวเลือกย่อยลงไป แต่ปุ่มเพิ่มผลงานเดิมยังอยู่ครบถ้วน
+            if (uploadOptionsBox) uploadOptionsBox.style.display = 'none';
+        }
     });
-}
+});
 
 // ==========================================
 // 2. ระบบไปหน้าตั้งค่า (Settings) & รองรับระบบออกจากระบบ (Logout)
