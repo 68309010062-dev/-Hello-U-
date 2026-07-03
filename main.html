@@ -3,70 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello U - หน้าหลัก</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Hello U - หน้าหลักสะสมผลงาน</title>
+    <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="main-page">
 
-    <div id="mainContainer">
-        
-        <div class="header-bar">
-            <div class="user-meta">
-                <p>ชื่อผู้ใช้: <span id="headerUserName">กำลังโหลด...</span></p>
-                <p>จำนวนผลงาน: <span id="portfolioCount">0</span></p>
-            </div>
-            <div class="avatar-box" id="avatarBox">
-                <i class="fas fa-user-circle"></i>
-            </div>
+    <header class="header-bar">
+        <div class="user-meta">
+            <p id="userNameDisplay">ชื่อผู้ใช้: กำลังโหลด...</p>
+            <p id="portfolioCountDisplay">จำนวนผลงาน: 0 ชิ้น</p>
         </div>
-
-        <div class="main-content">
-            <h2 class="page-title">หน้าหลัก</h2>
-
-            <div id="addActionZone">
-                <button class="btn-add-portfolio" id="addPortfolioBtn">+เพิ่มผลงาน</button>
-            </div>
-
-            <div class="upload-options-box" id="uploadOptionsBox">
-                <h3>เพิ่มผลงานเป็น</h3>
-                
-                <div class="option-item" data-type="file">
-                    <div class="option-icon-wrapper purple-bg">
-                        <i class="fas fa-paperclip"></i>
-                    </div>
-                    <span>ไฟล์</span>
-                </div>
-                
-                <div class="option-item" data-type="link">
-                    <div class="option-icon-wrapper purple-bg">
-                        <i class="fas fa-link"></i>
-                    </div>
-                    <span>ลิงก์</span>
-                </div>
-                
-                <div class="option-item" data-type="drive">
-                    <div class="option-icon-wrapper purple-bg">
-                        <i class="fab fa-google-drive"></i>
-                    </div>
-                    <span>กูเกิลไดรฟ์</span>
-                </div>
-            </div>
-
-            <div id="portfolioList"></div>
+        <div class="avatar-box">
+            <img id="userAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=HelloU" alt="User Avatar">
         </div>
+    </header>
 
-        <button class="settings-btn" id="settingsBtn" title="ตั้งค่า">
-            <i class="fas fa-cog"></i>
+    <main class="main-content">
+        <h2 class="page-title">หน้าหลัก</h2>
+
+        <button type="button" id="addPortfolioBtn" class="btn-add-portfolio">
+            <i class="fa-solid fa-square-plus"></i>
+            <span>เพิ่มผลงาน</span>
         </button>
 
-        <button class="floating-add-btn" id="floatingAddBtn">+</button>
-    </div>
+        <div id="uploadOptionsBox" class="upload-options-box" style="display: none;">
+            <h3>เพิ่มผลงานเป็น</h3>
+            
+            <div class="option-item" data-type="file">
+                <div class="option-icon-wrapper">
+                    <i class="fa-solid fa-paperclip"></i>
+                </div>
+                <span>ไฟล์</span>
+            </div>
 
-    <div id="loadingScreen" class="loading-view">
-        <p>กำลังเชื่อมต่อข้อมูล...</p>
-    </div>
+            <div class="option-item" data-type="link">
+                <div class="option-icon-wrapper">
+                    <i class="fa-solid fa-link"></i>
+                </div>
+                <span>ลิงก์</span>
+            </div>
 
-    <script type="module" src="script.js"></script>
+            <div class="option-item" data-type="drive">
+                <div class="option-icon-wrapper">
+                    <i class="fa-brands fa-google-drive"></i>
+                </div>
+                <span>กูเกิลไดรฟ์</span>
+            </div>
+        </div>
+    </main>
+
+    <button type="button" id="settingsBtn" class="settings-btn" title="ตั้งค่า">
+        <i class="fa-solid fa-gear"></i>
+    </button>
+
+    <button type="button" id="floatingAddBtn" class="floating-add-btn" title="เพิ่มอย่างรวดเร็ว">
+        <i class="fa-solid fa-plus"></i>
+    </button>
+
+    <script type="module" src="main.js"></script>
 </body>
 </html>
