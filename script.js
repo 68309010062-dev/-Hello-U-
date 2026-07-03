@@ -45,11 +45,9 @@ const optionItems = document.querySelectorAll('.option-item');
 if (mainContainer) {
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            // แสดงข้อมูลผู้ใช้บนแถบแสดงผลด้านบน
             if(headerUserName) headerUserName.innerText = user.displayName || user.email.split('@')[0];
             if(userEmailText) userEmailText.innerText = user.email;
             
-            // เปลี่ยนรูปภาพโปรไฟล์กรณีล็อกอินด้วย Google
             if (avatarBox && user.photoURL) {
                 avatarBox.innerHTML = `<img src="${user.photoURL}" alt="User Profile" referrerpolicy="no-referrer" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
             }
@@ -62,24 +60,26 @@ if (mainContainer) {
         }
     });
 
-    // ฟังก์ชันเปิดกล่อง "เพิ่มผลงานเป็น" (ตอนกดปุ่มบวก)
+    // ฟังก์ชันเปิดกล่อง "เพิ่มผลงานเป็น"
     const openUploadOptions = () => {
         if (uploadOptionsBox) {
             uploadOptionsBox.style.display = 'block';
         }
+        // มั่นใจได้ว่าแถบปุ่มตัวใหญ่ด้านบนจะไม่หายไปตอนเปิดเมนู
+        if (addActionZone) {
+            addActionZone.style.display = 'block'; 
+        }
     };
 
-    // ผูกเหตุการณ์ปุ่มบวกทั้ง 2 จุด ให้เปิดกล่องตัวเลือก
     if (addPortfolioBtn) addPortfolioBtn.addEventListener('click', openUploadOptions);
     if (floatingAddBtn) floatingAddBtn.addEventListener('click', openUploadOptions);
 
-    // เมื่อคลิกเลือกประเภทการเพิ่มผลงาน (ไฟล์ / ลิงก์ / กูเกิลไดรฟ์)
+    // เมื่อคลิกเลือกประเภทการเพิ่มผลงาน
     optionItems.forEach(item => {
         item.addEventListener('click', (e) => {
             const selectedType = item.getAttribute('data-type');
-            let isUploadSuccess = false;
+            let isUploadSuccess = false; // ตั้งสถานะเริ่มต้นเป็น เท็จ (ยังไม่สำเร็จ)
 
-            // ฟังก์ชันสำหรับใช้ตรวจสอบความถูกต้องของโครงสร้างลิงก์ (URL Validation)
             const isValidUrl = (string) => {
                 try {
                     const url = new URL(string);
@@ -89,7 +89,7 @@ if (mainContainer) {
                 }
             };
 
-            // 📁 1. ปุ่มไฟล์: เรียกหน้าต่างเลือก/อัปโหลดไฟล์จาก Google Drive
+            // 📁 1. กรณีเลือกประเภท: ไฟล์
             if (selectedType === 'file') {
                 let confirmUpload = confirm("🔄 กำลังเรียกหน้าต่าง 'แทรกไฟล์โดยใช้ Google ไดรฟ์'\nต้องการเลือกไฟล์ชิ้นนี้แล้วกดปุ่ม 'เรียกดู' หรือไม่?");
                 if (confirmUpload) {
@@ -100,22 +100,22 @@ if (mainContainer) {
                 }
             }
             
-            // 🔗 2. ปุ่มลิงก์: ตรวจสอบ URL ที่ใช้งานได้จริงเท่านั้น
+            // 🔗 2. กรณีเลือกประเภท: ลิงก์
             else if (selectedType === 'link') {
                 let userLink = prompt("🔗 กรุณาวางลิงก์ผลงานของคุณ (เช่น https://example.com):");
                 if (userLink) {
                     if (isValidUrl(userLink.trim())) {
                         isUploadSuccess = true;
-                        alert("🎉 ตรวจสอบลิงก์ถูกต้อง! เพิ่มลิงก์ผลงานสำเร็จ");
+                        alert("🎉 เพิ่มลิงก์ผลงานสำเร็จ!");
                     } else {
-                        alert("❌ ลิงก์ไม่ถูกต้อง! กรุณากรอกลิงก์ที่ใช้งานได้จริงเท่านั้น (ต้องมี http:// หรือ https://)");
+                        alert("❌ ลิงก์ไม่ถูกต้อง! กรุณากรอกลิงก์ที่มี http:// หรือ https://");
                     }
                 } else {
                     alert("❌ ยกเลิกการเพิ่มลิงก์");
                 }
             }
             
-            // 🤖 3. ปุ่มกูเกิลไดรฟ์: ตรวจสอบ URL ลิงก์แชร์ที่ใช้งานได้จริงเท่านั้น
+            // 🤖 3. กรณีเลือกประเภท: กูเกิลไดรฟ์
             else if (selectedType === 'drive') {
                 let driveLink = prompt("🤖 กรุณาวางลิงก์ Google Drive ของผลงานคุณ:");
                 if (driveLink) {
@@ -123,45 +123,25 @@ if (mainContainer) {
                         isUploadSuccess = true;
                         alert("🎉 เชื่อมต่อข้อมูล Google Drive สำเร็จ!");
                     } else {
-                        alert("❌ ลิงก์ไม่ถูกต้อง! กรุณากรอกลิงก์ Google Drive ที่ใช้งานได้จริงเท่านั้น");
+                        alert("❌ ลิงก์ไม่ถูกต้อง! กรุณากรอกลิงก์ที่ใช้งานได้จริง");
                     }
                 } else {
                     alert("❌ ยกเลิกการเพิ่มกูเกิลไดรฟ์");
                 }
             }
 
-            // ✨ เงื่อนไขการหายไปของปุ่มหลังทำรายการเสร็จสิ้น
+            // ⚡ เช็คผลลัพธ์ตรงนี้ ⚡
             if (isUploadSuccess) {
-                if (uploadOptionsBox) uploadOptionsBox.style.display = 'none'; // ซ่อนกล่องตัวเลือก
-                if (addActionZone) addActionZone.style.display = 'none';       // ซ่อนปุ่มแถบยาวบน
-                // 📌 เอาคำสั่งซ่อน floatingAddBtn ออกแล้ว เพื่อให้ปุ่มบวกกลมล่างขวายังคงอยู่เสมือนเดิมตามต้องการ
-            } else {
+                // ถ้าเพิ่ม "สำเร็จ" จริงๆ -> ซ่อนเมนูตัวเลือก และซ่อนแถบยาวด้านบนซะ
                 if (uploadOptionsBox) uploadOptionsBox.style.display = 'none';
+                if (addActionZone) addActionZone.style.display = 'none'; 
+                // ส่วนปุ่มบวกกลมล่างขวา (floatingAddBtn) จะไม่มีคำสั่งซ่อน ทำให้ไม่หายไปไหนแน่นอนครับ!
+            } else {
+                // 🛑 ถ้ากดยกเลิก หรือทำไม่สำเร็จ (ยังไม่ได้อะไรเลย) -> ปิดแค่กล่องตัวเลือก แต่คงแถบปุ่มยาวบนไว้ให้กดใหม่ได้!
+                if (uploadOptionsBox) uploadOptionsBox.style.display = 'none';
+                if (addActionZone) addActionZone.style.display = 'block'; // บังคับให้แถบปุ่มยาวยังคงอยู่
             }
         });
-    });
-}
-
-// ==========================================
-// 2. ระบบไปหน้าตั้งค่า (Settings) & รองรับระบบออกจากระบบ (Logout)
-// ==========================================
-const settingsBtn = document.getElementById('settingsBtn');
-if (settingsBtn) {
-    settingsBtn.addEventListener('click', () => {
-        window.location.href = 'settings.html';
-    });
-}
-
-const logoutBtn = document.getElementById('logoutBtn');
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-        try {
-            await signOut(auth);
-            alert("🚪 ออกจากระบบเรียบร้อยแล้ว");
-            window.location.href = 'index.html';
-        } catch (error) {
-            alert("เกิดข้อผิดพลาดในการออกจากระบบ: " + error.message);
-        }
     });
 }
 
