@@ -1,8 +1,12 @@
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { auth, db } from "./firebase-config.js"; // ดึงตัวแปรสำเร็จรูปมาจากไฟล์ config ของคุณ
+import { doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+// 🎯 ดึง storage ที่เซ็ตค่าแอปพลิเคชันเสร็จแล้วมาจาก config ของคุณโดยตรง
+import { auth, db, storage } from "./firebase-config.js"; 
 
 document.addEventListener("DOMContentLoaded", () => {
+    let currentUserId = null;
+
     // 1. ดึง Elements หน้าจอ UI
     const userNameDisplay = document.getElementById("userNameDisplay");
     const portfolioCountDisplay = document.getElementById("portfolioCountDisplay");
@@ -13,47 +17,57 @@ document.addEventListener("DOMContentLoaded", () => {
     const uploadOptionsBox = document.getElementById("uploadOptionsBox");
     const settingsBtn = document.getElementById("settingsBtn");
     const optionItems = document.querySelectorAll(".option-item");
+    const fileInputHidden = document.getElementById("fileInputHidden");
 
-    // 2. 🔐 ดักฟังสถานะล็อกอิน และดึงข้อมูลจากคอลเลกชัน "users" ใน Firestore
+    // 2. 🔐 ตรวจสอบสถานะล็อกอิน
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             console.log("ล็อกอินสำเร็จด้วย UID:", user.uid);
+            currentUserId = user.uid;
             
             try {
-                // ชี้ไปยังเอกสารของ user คนนั้นในคอลเลกชัน users โดยใช้ UID เป็นตัวระบุ
                 const userDocRef = doc(db, "users", user.uid);
                 const userDocSnap = await getDoc(userDocRef);
                 
                 if (userDocSnap.exists()) {
                     const userData = userDocSnap.data();
-                    
-                    // ดึงค่า displayName จาก Firestore (เช่น "lol") มาแสดงผล
                     userNameDisplay.textContent = `ชื่อผู้ใช้: ${userData.displayName || user.displayName || 'ผู้ใช้ทั่วไป'}`;
-                    
-                    // ดึงจำนวนผลงาน (หากยังไม่มีระบบนับในฟิลด์ ให้ตั้ง default เป็น 0 ไปก่อน)
                     portfolioCountDisplay.textContent = `จำนวนผลงาน: ${userData.portfolioCount || 0} ชิ้น`;
                 } else {
-                    // หากยังไม่ได้เซฟเอกสารลง Firestore ให้ดึงข้อมูลเบื้องต้นจากระบบ Auth มาขัดตาทัพก่อน
                     userNameDisplay.textContent = `ชื่อผู้ใช้: ${user.displayName || 'กำลังโหลดข้อมูล...'}`;
                     portfolioCountDisplay.textContent = `จำนวนผลงาน: 0 ชิ้น`;
                 }
             } catch (error) {
-                console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", error);
-                userNameDisplay.textContent = `ชื่อผู้ใช้: ${user.displayName || 'พบข้อผิดพลาดในการโหลด'}`;
+                console.error("เกิดข้อผิดพลาดในการดึงข้อมูลโปรไฟล์:", error);
             }
 
-            // ถ้าผู้ใช้มีรูปโปรไฟล์ (เช่น เข้าด้วย Google) ให้แสดงรูปแทนไอคอนว่างๆ
             if (user.photoURL && userAvatar) {
                 userAvatar.src = user.photoURL;
             }
         } else {
-            // ป้องกันแอบเข้าหน้าหลักโดยไม่ล็อกอิน -> สั่งเด้งกลับหน้า Login ทันที
-            console.log("ตรวจพบว่ายังไม่ได้เข้าสู่ระบบ ย้ายหน้ากลับ...");
             window.location.href = "index.html";
         }
     });
 
-    // 3. ฟังก์ชันเปิด-ปิดเมนูตัวเลือกอัปโหลด (+เพิ่มผลงาน)
+    // 🗄️ ฟังก์ชันเซฟข้อมูลลง Firestore คอลเลกชัน portfolios
+    async function savePortfolioToFirebase(type, title, content) {
+        if (!currentUserId) return;
+        try {
+            const portfolioRef = collection(db, "portfolios");
+            await addDoc(portfolioRef, {
+                userId: currentUserId,
+                type: type,         
+                title: title,       
+                content: content,   
+                createdAt: serverTimestamp() 
+            });
+            console.log(`[Firestore] บันทึกผลงานสำเร็จ: ${title}`);
+        } catch (error) {
+            console.error("[Firestore Error] บันทึกข้อมูลล้มเหลว:", error);
+        }
+    }
+
+    // 3. ฟังก์ชันเปิด-ปิดเมนูตัวเลือก
     function toggleUploadOptions() {
         if (uploadOptionsBox.style.display === "none" || uploadOptionsBox.style.display === "") {
             uploadOptionsBox.style.display = "block";
@@ -63,56 +77,69 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // ผูก Event ตัวเปิดเมนูเข้ากับปุ่มทั้ง 2 จุด
-    if (addPortfolioBtn) {
-        addPortfolioBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            toggleUploadOptions();
-        });
-    }
+    if (addPortfolioBtn) addPortfolioBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleUploadOptions(); });
+    if (floatingAddBtn) floatingAddBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleUploadOptions(); });
 
-    if (floatingAddBtn) {
-        floatingAddBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            toggleUploadOptions();
-        });
-    }
-
-    // 4. ตัวรับคำสั่งจากการเลือกช่องทางอัปโหลดผลงาน
+    // 4. ตัวรับคำสั่งเมื่อเลือกประเภท
     optionItems.forEach(item => {
         item.addEventListener("click", function() {
             const uploadType = this.getAttribute("data-type");
-            console.log(`เลือกอัปโหลดประเภท: ${uploadType}`);
+            uploadOptionsBox.style.display = "none"; 
             
             if (uploadType === "file") {
-                alert("📂 ระบบกำลังเปิดหน้าต่างเลือกไฟล์ของคุณ...");
+                if (fileInputHidden) {
+                    console.log("กำลังเปิดหน้าต่างเลือกไฟล์...");
+                    fileInputHidden.click(); // สั่งเปิดหน้าต่างเลือกไฟล์
+                }
             } else if (uploadType === "link") {
-                alert("🔗 ระบบกำลังเปิดกล่องบันทึกลิงก์ภายนอก...");
+                savePortfolioToFirebase("link", "ลิงก์ผลงานด่วน", "https://example.com");
             } else if (uploadType === "drive") {
-                alert("🤖 ระบบกำลังเรียกการเข้าถึง Google Drive...");
+                savePortfolioToFirebase("drive", "กูเกิลไดรฟ์ด่วน", "https://drive.google.com");
             }
-            
-            uploadOptionsBox.style.display = "none"; // ทำงานเสร็จให้พับเมนูเก็บลงไป
         });
     });
 
-    // 5. ปุ่มฟันเฟืองสำหรับตั้งค่าโปรไฟล์
-    if (settingsBtn) {
-        settingsBtn.addEventListener("click", () => {
-            alert("⚙️ กำลังพาคุณไปยังหน้าตั้งค่าโปรไฟล์และตั้งค่าระบบ...");
+    // 🔥 5. ดักฟังเมื่อเลือกไฟล์เสร็จ -> ส่งขึ้น Cloud Storage ทันที
+    if (fileInputHidden) {
+        fileInputHidden.addEventListener("change", async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!currentUserId || !storage) {
+                console.error("อัปโหลดไม่ได้: ระบบตรวจไม่พบรหัสผู้ใช้หรือตัวแปร storage ขาดหายไป");
+                return;
+            }
+
+            const title = file.name; 
+            console.log(`[Storage] เริ่มอัปโหลดไฟล์: ${title}`);
+
+            try {
+                // อัปโหลดไฟล์ดิบเข้าโฟลเดอร์แยกตาม UID ผู้ใช้
+                const storageRef = ref(storage, `portfolios/${currentUserId}/${Date.now()}_${file.name}`);
+                const snapshot = await uploadBytes(storageRef, file);
+                
+                // ดึง URL ลิงก์ไฟล์
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                console.log("[Storage] สำเร็จ! ได้ URL ลิงก์ไฟล์แล้ว");
+
+                // บันทึกต่อเข้าสู่ฐานข้อมูล Firestore
+                await savePortfolioToFirebase("file", title, downloadURL);
+
+            } catch (error) {
+                console.error("[Storage Error] เกิดปัญหาระหว่างส่งไฟล์ขึ้นคลาวด์:", error);
+            } finally {
+                fileInputHidden.value = ""; // รีเซ็ตอินพุตให้เลือกใหม่ได้เรื่อยๆ
+            }
         });
     }
 
-    // 6. คลิกนอกขอบเขตกล่องเมนูตัวเลือก ให้ตัวเลือกปิดตัวลงอัตโนมัติ (UX ที่ดีสำหรับมือถือ)
+    // คลิกด้านนอกปิดเมนู
     document.addEventListener("click", (event) => {
         if (uploadOptionsBox && uploadOptionsBox.style.display === "block") {
             const isClickInside = uploadOptionsBox.contains(event.target) || 
                                   (addPortfolioBtn && addPortfolioBtn.contains(event.target)) || 
                                   (floatingAddBtn && floatingAddBtn.contains(event.target));
-            
-            if (!isClickInside) {
-                uploadOptionsBox.style.display = "none";
-            }
+            if (!isClickInside) uploadOptionsBox.style.display = "none";
         }
     });
 });
