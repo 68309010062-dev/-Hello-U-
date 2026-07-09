@@ -1,11 +1,11 @@
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-// 🎯 ดึง storage ที่เซ็ตค่าแอปพลิเคชันเสร็จแล้วมาจาก config ของคุณโดยตรง
-import { auth, db, storage } from "./firebase-config.js"; 
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+import { auth, db } from "./firebase-config.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     let currentUserId = null;
+    const storage = getStorage();
 
     // 1. ดึง Elements หน้าจอ UI
     const userNameDisplay = document.getElementById("userNameDisplay");
@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const optionItems = document.querySelectorAll(".option-item");
     const fileInputHidden = document.getElementById("fileInputHidden");
 
-    // 2. 🔐 ตรวจสอบสถานะล็อกอิน
+    // 2. 🔐 ดักฟังสถานะล็อกอิน และดึงข้อมูลจากคอลเลกชัน "users" ใน Firestore
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             console.log("ล็อกอินสำเร็จด้วย UID:", user.uid);
@@ -38,20 +38,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     portfolioCountDisplay.textContent = `จำนวนผลงาน: 0 ชิ้น`;
                 }
             } catch (error) {
-                console.error("เกิดข้อผิดพลาดในการดึงข้อมูลโปรไฟล์:", error);
+                console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", error);
+                userNameDisplay.textContent = `ชื่อผู้ใช้: ${user.displayName || 'พบข้อผิดพลาดในการโหลด'}`;
             }
 
             if (user.photoURL && userAvatar) {
                 userAvatar.src = user.photoURL;
             }
         } else {
+            console.log("ตรวจพบว่ายังไม่ได้เข้าสู่ระบบ ย้ายหน้ากลับ...");
             window.location.href = "index.html";
         }
     });
 
-    // 🗄️ ฟังก์ชันเซฟข้อมูลลง Firestore คอลเลกชัน portfolios
+    // ➕ ฟังก์ชันแชร์สำหรับเซฟบันทึกข้อมูลรายละเอียดโปรเจกต์ลงฐานข้อมูล Firestore
     async function savePortfolioToFirebase(type, title, content) {
         if (!currentUserId) return;
+
         try {
             const portfolioRef = collection(db, "portfolios");
             await addDoc(portfolioRef, {
@@ -61,13 +64,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 content: content,   
                 createdAt: serverTimestamp() 
             });
-            console.log(`[Firestore] บันทึกผลงานสำเร็จ: ${title}`);
+            console.log(`บันทึกข้อมูลผลงานประเภท ${type} เรียบร้อยแล้ว`);
         } catch (error) {
-            console.error("[Firestore Error] บันทึกข้อมูลล้มเหลว:", error);
+            console.error("เกิดข้อผิดพลาดในการบันทึกข้อมูลลง Firestore:", error);
         }
     }
 
-    // 3. ฟังก์ชันเปิด-ปิดเมนูตัวเลือก
+    // 3. ฟังก์ชันเปิด-ปิดเมนูตัวเลือกอัปโหลด (+เพิ่มผลงาน)
     function toggleUploadOptions() {
         if (uploadOptionsBox.style.display === "none" || uploadOptionsBox.style.display === "") {
             uploadOptionsBox.style.display = "block";
@@ -77,69 +80,86 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    if (addPortfolioBtn) addPortfolioBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleUploadOptions(); });
-    if (floatingAddBtn) floatingAddBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleUploadOptions(); });
+    if (addPortfolioBtn) {
+        addPortfolioBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleUploadOptions();
+        });
+    }
 
-    // 4. ตัวรับคำสั่งเมื่อเลือกประเภท
+    if (floatingAddBtn) {
+        floatingAddBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleUploadOptions();
+        });
+    }
+
+    // 4. ตัวรับคำสั่งจากการเลือกช่องทางอัปโหลดผลงาน (นำ Alert/Prompt ที่ไม่จำเป็นออกแล้ว)
     optionItems.forEach(item => {
-        item.addEventListener("click", function() {
+        item.addEventListener("click", async function() {
             const uploadType = this.getAttribute("data-type");
-            uploadOptionsBox.style.display = "none"; 
+            console.log(`เลือกอัปโหลดประเภท: ${uploadType}`);
+            uploadOptionsBox.style.display = "none"; // ทำงานเสร็จให้พับเมนูเก็บลงไปทันที
             
             if (uploadType === "file") {
                 if (fileInputHidden) {
-                    console.log("กำลังเปิดหน้าต่างเลือกไฟล์...");
-                    fileInputHidden.click(); // สั่งเปิดหน้าต่างเลือกไฟล์
+                    fileInputHidden.click(); // เรียกเปิดหน้าต่างเลือกไฟล์จากเครื่องทันที
                 }
             } else if (uploadType === "link") {
-                savePortfolioToFirebase("link", "ลิงก์ผลงานด่วน", "https://example.com");
+                // สำหรับ Link และ Drive สามารถใช้รับค่าจาก Clipboard หรือผูกกับ UI Input Box ในอนาคตได้ 
+                // ตอนนี้เซ็ตให้บันทึกเป็นชื่อดีฟอลต์แบบด่วนไปก่อน
+                await savePortfolioToFirebase("link", "ลิงก์ผลงานใหม่", "https://example.com");
             } else if (uploadType === "drive") {
-                savePortfolioToFirebase("drive", "กูเกิลไดรฟ์ด่วน", "https://drive.google.com");
+                await savePortfolioToFirebase("drive", "กูเกิลไดรฟ์ใหม่", "https://drive.google.com");
             }
         });
     });
 
-    // 🔥 5. ดักฟังเมื่อเลือกไฟล์เสร็จ -> ส่งขึ้น Cloud Storage ทันที
+    // ➕ ดักฟังเมื่อทำการเลือกไฟล์เสร็จสิ้น -> อัปโหลดขึ้น Cloud Storage ทันทีโดยใช้ชื่อไฟล์เป็นชื่อผลงาน
     if (fileInputHidden) {
         fileInputHidden.addEventListener("change", async (event) => {
             const file = event.target.files[0];
-            if (!file) return;
+            if (!file || !currentUserId) return;
 
-            if (!currentUserId || !storage) {
-                console.error("อัปโหลดไม่ได้: ระบบตรวจไม่พบรหัสผู้ใช้หรือตัวแปร storage ขาดหายไป");
-                return;
-            }
-
+            // ใช้ชื่อไฟล์จริงจากเครื่องเป็นชื่อผลงานอัตโนมัติ ไม่ต้องเด้งถาม
             const title = file.name; 
-            console.log(`[Storage] เริ่มอัปโหลดไฟล์: ${title}`);
+            console.log(`เริ่มอัปโหลดไฟล์: ${title}`);
 
             try {
-                // อัปโหลดไฟล์ดิบเข้าโฟลเดอร์แยกตาม UID ผู้ใช้
+                // บันทึกไฟล์แยกโฟลเดอร์ตาม UID และเพิ่ม timestamp ป้องกันชื่อไฟล์ซ้ำกัน
                 const storageRef = ref(storage, `portfolios/${currentUserId}/${Date.now()}_${file.name}`);
                 const snapshot = await uploadBytes(storageRef, file);
-                
-                // ดึง URL ลิงก์ไฟล์
                 const downloadURL = await getDownloadURL(snapshot.ref);
-                console.log("[Storage] สำเร็จ! ได้ URL ลิงก์ไฟล์แล้ว");
 
-                // บันทึกต่อเข้าสู่ฐานข้อมูล Firestore
+                // นำข้อมูลลิงก์ที่ได้ไปสร้างเอกสารบันทึกในคอลเลกชัน Firestore ต่อทันที
                 await savePortfolioToFirebase("file", title, downloadURL);
 
             } catch (error) {
-                console.error("[Storage Error] เกิดปัญหาระหว่างส่งไฟล์ขึ้นคลาวด์:", error);
+                console.error("กระบวนการอัปโหลดไฟล์ล้มเหลว:", error);
             } finally {
-                fileInputHidden.value = ""; // รีเซ็ตอินพุตให้เลือกใหม่ได้เรื่อยๆ
+                fileInputHidden.value = ""; // เคลียร์ค่าเพื่อให้สามารถกดอัปโหลดซ้ำไฟล์เดิมได้
             }
         });
     }
 
-    // คลิกด้านนอกปิดเมนู
+    // 5. ปุ่มฟันเฟืองสำหรับตั้งค่าโปรไฟล์
+    if (settingsBtn) {
+        settingsBtn.addEventListener("click", () => {
+            console.log("เข้าสู่หน้าตั้งค่าระบบ...");
+            // สามารถใส่คำสั่ง window.location.href = "settings.html"; เพื่อเปลี่ยนหน้าในอนาคตได้
+        });
+    }
+
+    // 6. คลิกนอกขอบเขตกล่องเมนูตัวเลือก ให้ตัวเลือกปิดตัวลงอัตโนมัติ (UX ที่ดีสำหรับมือถือ)
     document.addEventListener("click", (event) => {
         if (uploadOptionsBox && uploadOptionsBox.style.display === "block") {
             const isClickInside = uploadOptionsBox.contains(event.target) || 
                                   (addPortfolioBtn && addPortfolioBtn.contains(event.target)) || 
                                   (floatingAddBtn && floatingAddBtn.contains(event.target));
-            if (!isClickInside) uploadOptionsBox.style.display = "none";
+            
+            if (!isClickInside) {
+                uploadOptionsBox.style.display = "none";
+            }
         }
     });
 });
