@@ -1,10 +1,26 @@
 /* ===================================================
-   📁 MAIN PAGE STYLES (สำหรับหน้า main-page เท่านั้น)
+   RESET & GLOBAL BASICS (ดึงกลับมาเพื่อให้หน้าหลักคำนวณสัดส่วนได้ถูกต้อง)
+   =================================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box; /* ล็อกขนาดกล่องไม่ให้ Padding ดันหลุดขอบจอ */
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    -webkit-tap-highlight-color: transparent; /* ลบไฮไลต์สีฟ้าประหลาดเวลากดบนมือถือ */
+    overflow-x: hidden; /* ล็อกหน้าจอห้ามเลื่อนเบี้ยวซ้ายขวา */
+    width: 100%;
+}
+
+/* ===================================================
+   📁 MAIN PAGE STYLES (สไตล์สำหรับหน้าหลักสะสมผลงาน)
    =================================================== */
 
 body.main-page {
     min-height: 100vh;
-    /* 🌌 รูปภาพพื้นหลังเนออนสีม่วง-น้ำเงินตามที่คุณส่งมา */
+    /* 🌌 รูปภาพพื้นหลังเนออนสีม่วง-น้ำเงินที่คุณส่งมา */
     background-image: url('https://i.pinimg.com/originals/4b/7d/24/4b7d24f725920ea891f798819508791b.png');
     background-size: cover;
     background-position: center;
