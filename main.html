@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hello U - หน้าหลักสะสมผลงาน</title>
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -44,13 +44,9 @@
                 <span>ลิงก์</span>
             </div>
 
-            <div class="option-item" data-type="drive">
-                <div class="option-icon-wrapper">
-                    <i class="fa-brands fa-google-drive"></i>
-                </div>
-                <span>กูเกิลไดรฟ์</span>
-            </div>
         </div>
+
+        <div id="portfolioContainer" style="margin-top: 30px; display: flex; flex-direction: column; gap: 15px;"></div>
     </main>
 
     <button type="button" id="settingsBtn" class="settings-btn" title="ตั้งค่า">
@@ -63,6 +59,24 @@
 
     <input type="file" id="fileInputHidden" style="display: none;" accept="image/*, application/pdf, .doc, .docx, .ppt, .pptx">
     
+    <!-- กล่องพรีวิวผลงาน (Modal Overlay) -->
+    <div id="previewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; touch-action: none;">
+        
+        <!-- 🎯 โซนปุ่มควบคุมด้านบนขวา (เพิ่มปุ่มดาวน์โหลด) -->
+        <div style="position: absolute; top: 20px; right: 20px; display: flex; gap: 12px; z-index: 10000;">
+            <!-- ปุ่มโหลดไฟล์ (ซ่อนไว้ก่อน เดี๋ยวให้ JS สั่งเปิดและยัดลิงก์ใส่ให้เวลาเปิดไฟล์ชิ้นนั้นๆ) -->
+            <a id="modalDownloadBtn" href="#" download="" style="display: none; background: #3182ce; color: white; border-radius: 50%; width: 40px; height: 40px; text-decoration: none; font-size: 18px; align-items: center; justify-content: center; transition: 0.2s;" title="ดาวน์โหลดไฟล์นี้ลงเครื่อง">
+                <i class="fa-solid fa-download"></i>
+            </a>
+            <!-- ปุ่ม X ปิดพรีวิว -->
+            <button id="closeModalBtn" style="background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center;" title="ปิดหน้าต่าง">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div id="modalContentArea" style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;"></div>
+    </div>
+
     <script type="module" src="main.js"></script>
 </body>
 </html>
