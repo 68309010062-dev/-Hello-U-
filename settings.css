@@ -1,0 +1,141 @@
+/* ล้างค่าเริ่มต้น และตั้งฟอนต์ให้ดูนุ่มนวล */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ตั้งค่าพื้นหลังเริ่มต้น เป็นสีม่วงไล่เฉดตามรูปแบบดั้งเดิมของแอปพี่ */
+body {
+    background: linear-gradient(180deg, #0f0c1b 0%, #bd00ff 100%);
+    min-height: 100vh;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: background 0.3s ease; /* เพิ่มความสมูทเวลาเปลี่ยนสีพื้นหลัง */
+}
+
+/* 👤 แถบด้านบน (Top Bar) ปรับสเกลและการจัดวางให้เหมือนหน้าหลัก 100% */
+.top-bar {
+    width: 100%;
+    max-width: 480px; /* ขยายขนาดความกว้างเท่าหน้าหลัก */
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-info {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-align: left; /* จัดชิดซ้ายเหมือนหน้าหลัก */
+}
+
+.avatar-img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 2px solid white;
+    object-fit: cover;
+}
+
+/* 📦 กล่องควบคุมหลักของหน้าตั้งค่า ขยายขนาดออกด้านข้างให้สมดุล */
+.settings-container {
+    width: 100%;
+    max-width: 480px; /* ขยายเพิ่มพื้นที่ด้านข้างให้เท่ากับแถบด้านบน */
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 0px;
+}
+
+/* หัวข้อย่อย */
+.section-box h2 {
+    font-size: 18px;
+    font-weight: normal;
+    margin-bottom: 12px;
+}
+
+/* โซนปุ่มเปลี่ยนสีพื้นหลัง */
+.color-container {
+    display: flex;
+    gap: 16px;
+}
+
+.color-btn {
+    width: 60px;
+    height: 60px;
+    border: 2.5px solid #d600ff; /* กรอบสีชมพูสะท้อนแสงตามดีไซน์เดิม */
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.color-btn:hover {
+    transform: scale(1.05);
+}
+
+/* รายละเอียดแต่ละสี */
+.color-white { background: #ffffff; }
+.color-black { background: #000000; }
+.color-gradient { 
+    background: linear-gradient(135deg, #2b1f54 0%, #bd00ff 100%); 
+}
+
+/* สไตล์ปุ่มกดด้านล่าง (คงเดิม ไม่เปลี่ยนหน้าตา) */
+.action-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: filter 0.2s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+/* ปุ่มลงชื่อออก (สีส้มแดง) */
+.btn-logout {
+    background: #ff4b4b;
+}
+.btn-logout:hover {
+    filter: brightness(1.1);
+}
+
+/* ปุ่มลบบัญชีผู้ใช้ (สีแดงเข้ม) */
+.btn-delete {
+    background: #5d0000;
+}
+.btn-delete:hover {
+    background: #7d0000;
+}
