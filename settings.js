@@ -1,74 +1,181 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>หน้าตั้งค่า</title>
-    <!-- นำเข้าไอคอนจาก FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="settings.css">
-</head>
-<body>
+import { onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { doc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { auth, db } from "./firebase-config.js"; 
 
-    <!-- 👤 แถบด้านบนแสดงโปรไฟล์ (ถอดโครงสร้างตามหน้าหลักเป๊ะๆ) -->
-    <div class="top-bar">
-        <div class="user-info">
-            <div id="userNameDisplay">ชื่อผู้ใช้: กำลังโหลด...</div>
-            <div id="portfolioCountDisplay">จำนวนผลงาน: 0 ชิ้น</div>
-        </div>
-        <img id="userAvatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="User Avatar" class="avatar-img">
-    </div>
+document.addEventListener("DOMContentLoaded", () => {
+    let currentUser = null;
 
-    <!-- ส่วนเนื้อหาหน้าตั้งค่า -->
-    <div class="settings-container">
-        <h1 class="page-title">หน้าตั้งค่า</h1>
+    // 1. ดึง Element จากหน้าจอ
+    const userNameDisplay = document.getElementById("userNameDisplay");
+    const portfolioCountDisplay = document.getElementById("portfolioCountDisplay");
+    const userAvatar = document.getElementById("userAvatar");
 
-        <!-- ส่วนเปลี่ยนสีพื้นหลัง -->
-        <div class="section-box">
-            <h2>เปลี่ยนสีพื้นหลัง</h2>
-            <div class="color-container">
-                <button id="bgWhiteBtn" class="color-btn color-white" title="สีขาว"></button>
-                <button id="bgGradBtn" class="color-btn color-gradient" title="สีไล่เฉด"></button>
-                <button id="bgBlackBtn" class="color-btn color-black" title="สีดำ"></button>
-            </div>
-        </div>
+    const bgWhiteBtn = document.getElementById("bgWhiteBtn");
+    const bgGradBtn = document.getElementById("bgGradBtn");
+    const bgBlackBtn = document.getElementById("bgBlackBtn");
 
-        <!-- ปุ่มแอคชันด้านล่าง -->
-        <div class="action-container">
-            <button id="logoutBtn" class="btn btn-logout">
-                <i class="fa-solid fa-right-from-bracket"></i> ลงชื่อออก
-            </button>
-            <button id="deleteAccountBtn" class="btn btn-delete">
-                <i class="fa-solid fa-trash-can"></i> ลบบัญชีผู้ใช้
-            </button>
-        </div>
-    </div>
+    const logoutBtn = document.getElementById("logoutBtn");
+    const deleteAccountBtn = document.getElementById("deleteAccountBtn");
 
-    <!-- ========================================== -->
-    <!-- ป๊อปอัป Modal ยืนยันการลบบัญชีผู้ใช้ (ปรับสเกลเพื่อโทรศัพท์โดยเฉพาะ) -->
-    <!-- ========================================== -->
-    <div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(5px); padding: 16px; box-sizing: border-box;">
-        <div style="background: #1e1b29; color: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 320px; text-align: center; border: 1px solid #ff4d4d; box-shadow: 0 8px 32px rgba(0,0,0,0.5); font-family: sans-serif; box-sizing: border-box;">
+    // 🎨 ฟังก์ชันสำหรับปรับสีตัวอักษรและสไตล์ตามสีพื้นหลังที่เลือก
+    function applyThemeStyles(color) {
+        document.body.style.background = color;
+        const topBar = document.querySelector(".top-bar");
+
+        if (color === "#ffffff") {
+            // ⚪ ถ้าเป็นสีขาว: เปลี่ยนตัวอักษรหลักเป็นสีเข้ม
+            document.body.style.color = "#1a202c";
+            if (topBar) {
+                topBar.style.background = "rgba(0, 0, 0, 0.05)";
+                topBar.style.borderBottom = "1px solid rgba(0, 0, 0, 0.1)";
+            }
+            if (userAvatar) userAvatar.style.borderColor = "#1a202c";
+        } else {
+            // ⚫ ถ้าเป็นสีดำ หรือ สีไล่เฉด: เปลี่ยนตัวอักษรหลักเป็นสีขาว
+            document.body.style.color = "white";
+            if (topBar) {
+                topBar.style.background = "rgba(255, 255, 255, 0.1)";
+                topBar.style.borderBottom = "1px solid rgba(255, 255, 255, 0.1)";
+            }
+            if (userAvatar) userAvatar.style.borderColor = "white";
+        }
+    }
+
+    // 2. ดึงสีพื้นหลังที่เคยเซฟไว้มาใช้ตอนเปิดหน้าเว็บ
+    const savedBg = localStorage.getItem("userBackground") || "linear-gradient(180deg, #0f0c1b 0%, #bd00ff 100%)";
+    applyThemeStyles(savedBg);
+
+    // 3. ตรวจสอบสถานะการล็อกอิน และดึงข้อมูลผู้ใช้
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user;
+            try {
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                
+                if (userDocSnap.exists()) {
+                    userNameDisplay.textContent = `ชื่อผู้ใช้: ${userDocSnap.data().displayName || user.displayName || 'ผู้ใช้ทั่วไป'}`;
+                } else {
+                    userNameDisplay.textContent = `ชื่อผู้ใช้: ${user.displayName || 'ผู้ใช้ทั่วไป'}`;
+                }
+            } catch (error) { 
+                userNameDisplay.textContent = `ชื่อผู้ใช้: ${user.displayName || 'ผู้ใช้ทั่วไป'}`;
+            }
             
-            <i class="fa-solid fa-circle-exclamation" style="font-size: 36px; color: #ff4d4d; margin-bottom: 10px;"></i>
-            <h2 style="color: #ff4d4d; margin: 0 0 6px 0; font-size: 18px; font-weight: bold;">ยืนยันการลบบัญชีถาวร</h2>
-            <p style="font-size: 12px; color: #cbd5e0; margin: 0 0 16px 0; line-height: 1.4; padding: 0 8px;">ข้อมูลผลงานทั้งหมดของคุณจะถูกลบออกจากระบบทันทีและไม่สามารถกู้คืนได้</p>
-            
-            <div style="background: rgba(255,255,255,0.04); padding: 10px; border-radius: 8px; margin-bottom: 16px; border: 1px dashed rgba(255,255,255,0.15);">
-                <p style="font-size: 11px; color: #a0aec0; margin: 0 0 4px 0;">กรุณาพิมพ์อีเมลของคุณเพื่อยืนยัน:</p>
-                <strong id="modalUserEmailText" style="font-size: 13px; color: #38bdf8; word-break: break-all; display: block; padding: 0 2px;">...</strong>
-            </div>
+            // ดึงจำนวนผลงานมาแสดงในหน้าตั้งค่าด้วย (ถ้ามี element)
+            if (portfolioCountDisplay) {
+                // ตัวเลขจริงจะดึงจาก Firestore หน้าหลัก แต่อันนี้ใส่ค่าไว้รองรับโครงสร้าง
+                portfolioCountDisplay.textContent = localStorage.getItem("portfolioCount") || "จำนวนผลงาน: 0 ชิ้น";
+            }
 
-            <input type="text" id="deleteConfirmInput" placeholder="พิมพ์ชื่ออีเมลของคุณที่นี่" autocomplete="off" style="width: 100%; padding: 12px; margin-bottom: 16px; border-radius: 8px; border: 1px solid #4a5568; background: #0f0c1b; color: white; font-size: 14px; text-align: center; box-sizing: border-box; outline: none; -webkit-appearance: none;">
-            
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button id="cancelDeleteBtn" type="button" style="flex: 1; padding: 12px; background: #4a5568; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; -webkit-tap-highlight-color: transparent;">ยกเลิก</button>
-                <button id="finalDeleteBtn" type="button" style="flex: 1; padding: 12px; background: #ff4d4d; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; -webkit-tap-highlight-color: transparent;">ลบบัญชี</button>
-            </div>
-        </div>
-    </div>
+            if (user.photoURL && userAvatar) {
+                userAvatar.src = user.photoURL;
+            }
+        } else {
+            window.location.href = "index.html"; 
+        }
+    });
 
-    <!-- เชื่อมต่อสคริปต์ JavaScript -->
-    <script type="module" src="settings.js"></script>
-</body>
-</html>
+    // 4. ฟังก์ชันเปลี่ยนสีพื้นหลังเมื่อกดปุ่ม (บันทึกค่าลง localStorage เผื่อให้หน้าหลักดึงไปใช้)
+    if (bgWhiteBtn) {
+        bgWhiteBtn.addEventListener("click", () => {
+            const color = "#ffffff";
+            localStorage.setItem("userBackground", color);
+            applyThemeStyles(color);
+        });
+    }
+    
+    if (bgGradBtn) {
+        bgGradBtn.addEventListener("click", () => {
+            const color = "linear-gradient(180deg, #0f0c1b 0%, #bd00ff 100%)";
+            localStorage.setItem("userBackground", color);
+            applyThemeStyles(color);
+        });
+    }
+    
+    if (bgBlackBtn) {
+        bgBlackBtn.addEventListener("click", () => {
+            const color = "#000000";
+            localStorage.setItem("userBackground", color);
+            applyThemeStyles(color);
+        });
+    }
+
+    // 5. ปุ่มลงชื่อออก (Logout)
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", async () => {
+            if (confirm("คุณต้องการลงชื่อออกจากระบบใช่หรือไม่?")) {
+                try {
+                    await auth.signOut();
+                    window.location.href = "index.html";
+                } catch (error) { 
+                    alert("เกิดข้อผิดพลาดในการลงชื่อออก"); 
+                }
+            }
+        });
+    }
+
+    // 6. ปุ่มลบบัญชีผู้ใช้ (ระบบเปิด Modal บังคับพิมพ์เพื่อความปลอดภัยขั้นสุด)
+    const deleteModal = document.getElementById("deleteModal");
+    const modalUserEmailText = document.getElementById("modalUserEmailText");
+    const deleteConfirmInput = document.getElementById("deleteConfirmInput");
+    const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+    const finalDeleteBtn = document.getElementById("finalDeleteBtn");
+
+    if (deleteAccountBtn && deleteModal) {
+        // เมื่อคลิกปุ่ม "ลบบัญชี" สีแดงในหน้าตั้งค่า
+        deleteAccountBtn.addEventListener("click", () => {
+            if (!currentUser) return;
+            
+            // นำอีเมลของผู้ใช้ปัจจุบันไปแสดงใน Modal เพื่อให้ผู้ใช้ดูแล้วพิมพ์ตาม
+            if (modalUserEmailText) modalUserEmailText.textContent = currentUser.email;
+            
+            // ล้างค่าในช่องพิมพ์เก่าทิ้งก่อนเปิด
+            if (deleteConfirmInput) deleteConfirmInput.value = "";
+            
+            // สั่งแสดงผล Modal ขึ้นมาบนหน้าจอ
+            deleteModal.style.display = "flex";
+        });
+    }
+
+    // ปุ่มกดยกเลิกใน Modal
+    if (cancelDeleteBtn && deleteModal) {
+        cancelDeleteBtn.addEventListener("click", () => {
+            deleteModal.style.display = "none"; // ซ่อน Modal
+        });
+    }
+
+    // ปุ่มกดยืนยันลบใน Modal
+    if (finalDeleteBtn && deleteConfirmInput && deleteModal) {
+        finalDeleteBtn.addEventListener("click", async () => {
+            if (!currentUser) return;
+
+            const userEmail = currentUser.email;
+            const userInput = deleteConfirmInput.value.trim(); // ตัดช่องว่างหน้าหลังออกให้
+
+            // 1. เช็กความปลอดภัยด่านแรก: พิมพ์ตรงกับ Email บัญชี Google ปัจจุบันไหม
+            if (userInput !== userEmail) {
+                alert("❌ อีเมลไม่ถูกต้อง! กรุณาตรวจสอบและพิมพ์ใหม่อีกครั้ง");
+                return; // เด้งออก ไม่ทำงานต่อ
+            }
+
+            // 2. เช็กด่านสุดท้ายเพื่อความชัวร์
+            const finalConfirm = confirm("ยืนยันครั้งสุดท้ายจริง ๆ นะครับ? ระบบจะลบข้อมูลของคุณทั้งหมดทันที");
+            if (finalConfirm) {
+                try {
+                    // ลบเอกสารออกจาก Firestore
+                    await deleteDoc(doc(db, "users", currentUser.uid));
+                    // ลบตัวผู้ใช้ออกจาก Firebase Auth
+                    await deleteUser(currentUser);
+                    
+                    alert("ลบบัญชีผู้ใช้ของคุณสำเร็จแล้ว");
+                    window.location.href = "index.html";
+                } catch (error) {
+                    console.error(error);
+                    alert("เพื่อความปลอดภัยขั้นสูง กรุณาลงชื่อออกแล้วเข้าสู่ระบบใหม่อีกครั้ง ก่อนทำการลบบัญชีนะครับพี่");
+                    deleteModal.style.display = "none";
+                }
+            }
+        });
+    }
+});
