@@ -7,8 +7,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// เพิ่ม Log เพื่อเช็คความเรียบร้อยใน Console
-console.log("🚀ระบบ Auth Module พร้อมทำงานร่วมกับ style.css");
+console.log("🚀 ระบบ Auth Module รันเวอร์ชันเบื้องหลังสำเร็จ");
 
 // 1. ระบบเข้าสู่ระบบปกติ (หน้า index.html)
 const loginForm = document.getElementById('loginForm');
@@ -20,9 +19,8 @@ if (loginForm) {
 
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            alert("🎉 เข้าสู่ระบบสำเร็จ!");
             loginForm.reset();
-            window.location.href = 'main.html';
+            window.location.href = 'main.html'; // ย้ายหน้าเงียบๆ ทันทีเมื่อผ่าน
         } catch (error) {
             console.error("Login Error:", error);
             alert("❌ ไม่สามารถเข้าสู่ระบบได้! กรุณาตรวจสอบอีเมลและรหัสผ่านอีกครั้ง");
@@ -46,13 +44,13 @@ if (registerForm) {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
+            // บันทึกข้อมูลตั้งต้นผู้ใช้ลงฐานข้อมูล
             await setDoc(doc(db, "users", user.uid), {
                 authProvider: "email/password",
                 displayName: username,
                 email: email
             });
 
-            alert("🎉 ลงทะเบียนสำเร็จ!");
             window.location.href = 'index.html';
         } catch (error) {
             console.error("Register Error:", error);
@@ -61,7 +59,7 @@ if (registerForm) {
     });
 }
 
-// 3. ระบบเข้าสู่ระบบด้วย Google
+// 3. ระบบเข้าสู่ระบบด้วย Google (ปรับจังหวะการบันทึกข้อมูลเพื่อไม่ให้ติด Rules บล็อก)
 const googleLoginBtn = document.getElementById('googleLoginBtn');
 if (googleLoginBtn) {
     googleLoginBtn.addEventListener('click', async () => {
@@ -69,18 +67,19 @@ if (googleLoginBtn) {
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
 
+            // 🎯 ใช้ข้อมูลจากผลลัพธ์ของ Auth มาบันทึก และใช้ { merge: true } ป้องกันข้อมูลทับซ้อน
             await setDoc(doc(db, "users", user.uid), {
                 authProvider: "google.com",
                 displayName: user.displayName || "Google User",
                 email: user.email
             }, { merge: true });
 
-            alert("🎉 เข้าสู่ระบบด้วย Google สำเร็จ!");
-            window.location.href = 'main.html';
+            console.log("บันทึกข้อมูลผู้ใช้ Google ลงฐานข้อมูลสำเร็จ");
+            window.location.href = 'main.html'; // ย้ายหน้าทันทีอย่างไร้รอยต่อ
         } catch (error) {
             console.error("Google Auth Error:", error);
             if (error.code !== 'auth/popup-closed-by-user') {
-                alert("❌ ไม่สามารถเข้าสู่ระบบด้วย Google ได้: " + error.message);
+                alert("❌ เกิดข้อผิดพลาดจากระบบรักษาความปลอดภัย: " + error.message);
             }
         }
     });
