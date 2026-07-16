@@ -48,18 +48,54 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // 🎨 ฟังก์ชันอัปเดตธีมสีหน้าหลักให้แมตช์กับสีพื้นหลัง
+   // 🎨 ฟังก์ชันอัปเดตธีมสีหน้าหลักให้แมตช์กับสีพื้นหลัง
     function applyGlobalTheme(color) {
         document.body.style.background = color;
         const cards = portfolioContainer ? portfolioContainer.querySelectorAll(".portfolio-card-item") : [];
+        const filterBtns = document.querySelectorAll(".filter-tab-btn");
+        
+        // ดึง Elements ส่วนช่องค้นหามาจัดการสี
+        const searchInput = document.getElementById("searchPortfolioInput");
+        const searchIcon = document.querySelector(".fa-magnifying-glass");
         
         if (color === "#ffffff") {
             document.body.style.color = "#1a202c";
-            if (userNameDisplay) userNameDisplay.style.color = "#2d3748";
-            if (portfolioCountDisplay) portfolioCountDisplay.style.color = "#718096";
             
+            // 👤 ปรับข้อความหัวเว็บให้เป็นสีดำเข้มชัดเจน
+            if (userNameDisplay) userNameDisplay.style.color = "#000000";
+            if (portfolioCountDisplay) portfolioCountDisplay.style.color = "#000000";
+            
+            // 🔍 ปรับแต่งช่องค้นหา (Search Input) ให้เห็นตัวอักษรสีดำตอนพิมพ์
+            if (searchInput) {
+                searchInput.style.background = "#f7fafc";
+                searchInput.style.color = "#000000";
+                searchInput.style.borderColor = "#cbd5e0";
+            }
+            if (searchIcon) {
+                searchIcon.style.color = "#4a5568";
+            }
+
             const titles = document.querySelectorAll(".page-title, .upload-options-box h3");
             titles.forEach(t => t.style.color = "#1a202c");
+
+            // ⚙️ ปรับปุ่มเฟืองตั้งค่า
+            if (settingsBtn) {
+                settingsBtn.style.color = "#1a202c";
+                settingsBtn.style.background = "rgba(0, 0, 0, 0.05)";
+            }
+
+            // 📂 ปรับแต่งปุ่มกลุ่มฟิลเตอร์ (หมวดหมู่) สำหรับธีมสีขาว
+            filterBtns.forEach(btn => {
+                if (btn.classList.contains("active")) {
+                    btn.style.background = "#2b6cb0";
+                    btn.style.color = "#ffffff";
+                    btn.style.borderColor = "#2b6cb0";
+                } else {
+                    btn.style.background = "#edf2f7";
+                    btn.style.color = "#4a5568";
+                    btn.style.borderColor = "#cbd5e0";
+                }
+            });
 
             if (addPortfolioBtn) {
                 addPortfolioBtn.style.background = "#2b6cb0"; 
@@ -79,17 +115,45 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             cards.forEach(card => {
-                card.style.background = "rgba(0, 0, 0, 0.05)";
+                card.style.background = "rgba(0, 0, 0, 0.04)";
                 card.style.color = "#1a202c";
-                card.style.border = "1px solid rgba(0, 0, 0, 0.1)";
+                card.style.border = "1px solid rgba(0, 0, 0, 0.08)";
             });
         } else {
+            // 🌌 สำหรับธีมมืด (สีเดิม)
             document.body.style.color = "white";
             if (userNameDisplay) userNameDisplay.style.color = "white";
             if (portfolioCountDisplay) portfolioCountDisplay.style.color = "white";
             
+            // คืนค่าช่องค้นหาสำหรับธีมมืด
+            if (searchInput) {
+                searchInput.style.background = "rgba(255,255,255,0.1)";
+                searchInput.style.color = "white";
+                searchInput.style.borderColor = "rgba(255,255,255,0.2)";
+            }
+            if (searchIcon) {
+                searchIcon.style.color = "rgba(255,255,255,0.5)";
+            }
+
             const titles = document.querySelectorAll(".page-title, .upload-options-box h3");
             titles.forEach(t => t.style.color = "white");
+
+            if (settingsBtn) {
+                settingsBtn.style.color = "white";
+                settingsBtn.style.background = "transparent";
+            }
+
+            filterBtns.forEach(btn => {
+                if (btn.classList.contains("active")) {
+                    btn.style.background = "rgba(255, 255, 255, 0.2)";
+                    btn.style.color = "white";
+                    btn.style.borderColor = "rgba(255, 255, 255, 0.2)";
+                } else {
+                    btn.style.background = "rgba(255, 255, 255, 0.05)";
+                    btn.style.color = "rgba(255, 255, 255, 0.7)";
+                    btn.style.borderColor = "rgba(255, 255, 255, 0.1)";
+                }
+            });
 
             if (addPortfolioBtn) {
                 addPortfolioBtn.style.background = "rgba(255, 255, 255, 0.2)";
@@ -319,19 +383,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // 📂 ผูกระบบแท็บกดเลือกเมนูตัวกรอง (ทั้งหมด / ไฟล์ / ลิงก์)
     filterTabBtns.forEach(btn => {
         btn.addEventListener("click", function() {
-            filterTabBtns.forEach(b => {
-                b.classList.remove("active");
-                b.style.background = "rgba(255, 255, 255, 0.05)";
-                b.style.color = "rgba(255, 255, 255, 0.7)";
-                b.style.border = "1px solid rgba(255, 255, 255, 0.1)";
-            });
-            
+            filterTabBtns.forEach(b => b.classList.remove("active"));
             this.classList.add("active");
-            this.style.background = "rgba(255, 255, 255, 0.2)";
-            this.style.color = "white";
-            this.style.border = "1px solid rgba(255, 255, 255, 0.2)";
             
             currentFilter = this.getAttribute("data-filter");
+            
+            // สั่งคำนวณสีปุ่มใหม่ตามธีมปัจจุบันทันทีหลังคลิก
+            const currentTheme = localStorage.getItem("userBackground") || "linear-gradient(180deg, #0f0c1b 0%, #bd00ff 100%)";
+            applyGlobalTheme(currentTheme);
+            
             renderFilteredPortfolios();
         });
     });
