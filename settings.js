@@ -44,41 +44,81 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ฟังก์ชันปรับธีมสีของหน้าเว็บ
+    // 🎨 ฟังก์ชันปรับธีมสีของหน้าเว็บ (แก้ไขเรื่องปุ่มกลืนไปกับพื้นหลังสีขาว)
     function applyThemeStyles(color) {
         document.body.style.background = color;
         const topBar = document.querySelector(".top-bar");
         const inputs = document.querySelectorAll(".input-group input");
+        
+        // 1. ดึงกลุ่มตัวหนังสือ/ไอคอนทั้งหมดในโซนอัปโหลด
+        const uploadElements = document.querySelectorAll(
+            ".upload-section, .upload-section *, .input-group label, .file-input-label, .file-input-label *, [for='editAvatarFile'], [for='editAvatarFile'] *"
+        );
+        
+        // 2. ดึงเฉพาะ "ตัวปุ่ม" หรือ "กล่องดีไซน์" ของปุ่มเลือกรูปภาพ (มักจะเป็น Label หรือ Div คลาสเหล่านี้)
+        const uploadButtons = document.querySelectorAll(".file-input-label, [for='editAvatarFile'], .upload-btn");
 
         if (color === "#ffffff") {
             document.body.style.color = "#1a202c";
             if (userNameDisplay) userNameDisplay.style.color = "#000000";
             if (portfolioCountDisplay) portfolioCountDisplay.style.color = "#000000";
+            if (fileNameDisplay) fileNameDisplay.style.color = "#4a5568"; 
 
             if (topBar) {
                 topBar.style.background = "rgba(0, 0, 0, 0.05)";
                 topBar.style.borderBottom = "1px solid rgba(0, 0, 0, 0.1)";
             }
             if (userAvatar) userAvatar.style.borderColor = "#1a202c";
+            
             inputs.forEach(input => {
                 input.style.background = "#f7fafc";
                 input.style.color = "#1a202c";
                 input.style.borderColor = "#cbd5e0";
             });
+
+            // เปลี่ยนสีตัวอักษรในโซนอัปโหลดให้เป็นสีเข้ม
+            uploadElements.forEach(el => {
+                el.style.color = "#1a202c";
+            });
+            if (editAvatarFile) editAvatarFile.style.color = "#1a202c";
+
+            // ✨ ไฮไลท์: สั่งปรับพื้นหลังและกรอบของปุ่มเลือกรูปภาพเมื่ออยู่บนหน้าจอขาว
+            uploadButtons.forEach(btn => {
+                btn.style.background = "#f7fafc";            // พื้นหลังปุ่มออกเทาอ่อนๆ
+                btn.style.borderColor = "#cbd5e0";           // เส้นขอบปุ่มสีเทาชัดเจน
+                btn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.05)"; // เติมเงาละมุนๆ ให้ปุ่มลอยขึ้นมา
+            });
+
         } else {
+            // สำหรับธีมมืด หรือธีมไล่สี (Gradient)
             document.body.style.color = "white";
             if (userNameDisplay) userNameDisplay.style.color = "white";
             if (portfolioCountDisplay) portfolioCountDisplay.style.color = "white";
+            if (fileNameDisplay) fileNameDisplay.style.color = "#cbd5e0";
 
             if (topBar) {
                 topBar.style.background = "rgba(255, 255, 255, 0.1)";
                 topBar.style.borderBottom = "1px solid rgba(255, 255, 255, 0.1)";
             }
             if (userAvatar) userAvatar.style.borderColor = "white";
+            
             inputs.forEach(input => {
                 input.style.background = "#0f0c1b";
                 input.style.color = "white";
                 input.style.borderColor = "#4a5568";
+            });
+
+            // คืนค่าตัวอักษรเป็นสีขาว
+            uploadElements.forEach(el => {
+                el.style.color = "white";
+            });
+            if (editAvatarFile) editAvatarFile.style.color = "white";
+
+            // ✨ คืนค่าปุ่มเลือกรูปภาพให้เข้ากับธีมมืด
+            uploadButtons.forEach(btn => {
+                btn.style.background = "rgba(255, 255, 255, 0.1)"; // พื้นหลังโปร่งแสงขาวสว่างขุ่นๆ
+                btn.style.borderColor = "rgba(255, 255, 255, 0.2)";
+                btn.style.boxShadow = "none";
             });
         }
     }
@@ -93,7 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
             let currentName = user.displayName || 'ผู้ใช้ทั่วไป';
             let currentPhoto = user.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
-            // ดึงข้อมูลรูปภาพและชื่อจาก Firestore เป็นหลัก (เพราะรองรับ Base64)
             try {
                 const userDocRef = doc(db, "users", user.uid);
                 const userDocSnap = await getDoc(userDocRef);
@@ -107,13 +146,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error("Error fetching user doc:", error);
             }
 
-            // แสดงผลบนหัวเว็บ
             userNameDisplay.textContent = `ชื่อผู้ใช้: ${currentName}`;
             if (userAvatar) userAvatar.src = currentPhoto;
 
             if (editDisplayName) editDisplayName.value = currentName;
             
-            // แสดงเฉพาะ URL จริงในช่องกรอก (ถ้าเป็น Base64 ยาว ๆ จะล้างว่างไว้เพื่อไม่ให้หน้าต่างรก)
             if (editAvatarUrl) {
                 editAvatarUrl.value = currentPhoto.startsWith("data:") ? "" : currentPhoto;
             }
@@ -200,20 +237,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 saveProfileBtn.disabled = true;
                 saveProfileBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> กำลังบันทึก...`;
 
-                // 1. ✨ ทางแก้: ถ้าค่าที่ส่งเป็น Base64 เราจะไม่ส่งไปที่ Firebase Auth เพื่อป้องกัน Error
                 const isBase64 = newPhotoUrl.startsWith("data:");
                 const updateData = { displayName: newName };
                 
                 if (newPhotoUrl && !isBase64) {
                     updateData.photoURL = newPhotoUrl;
                 } else if (isBase64) {
-                    // หากเป็น Base64 ให้ส่งข้อความจำลองสั้น ๆ ไปแทนเพื่อหลบเลี่ยงระบบดักจับของ Auth
                     updateData.photoURL = "https://uploaded-from-local.storage";
                 }
                 
                 await updateProfile(currentUser, updateData);
 
-                // 2. บันทึกข้อมูลจริงทั้งหมดลง Firestore (ตารางนี้บันทึก Base64 ได้สบายตามสิทธิ์ Rules)
                 const userDocRef = doc(db, "users", currentUser.uid);
                 await setDoc(userDocRef, {
                     displayName: newName,
@@ -222,7 +256,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     updatedAt: new Date().toISOString()
                 }, { merge: true });
 
-                // 3. ปรับการแสดงผลหน้าเว็บให้เป็นข้อมูลล่าสุดทันที
                 userNameDisplay.textContent = `ชื่อผู้ใช้: ${newName}`;
                 if (newPhotoUrl && userAvatar) {
                     userAvatar.src = newPhotoUrl;
@@ -242,7 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ปุ่มเลือกธีมและลบบัญชียังคงทำงานเหมือนเดิม...
+    // ปุ่มสลับสีพื้นหลัง
     if (bgWhiteBtn) {
         bgWhiteBtn.addEventListener("click", () => {
             const color = "#ffffff";
