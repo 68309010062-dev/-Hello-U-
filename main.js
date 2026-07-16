@@ -4,6 +4,9 @@ import { auth, db } from "./firebase-config.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     let currentUserId = null;
+    let localPortfoliosRaw = []; // 📦 อาเรย์สำหรับเก็บข้อมูลผลงานที่ดึงมาจาก Firebase เพื่อนำไปกรองและค้นหาในฝั่ง Client
+    let currentFilter = "all";   // 📂 สถานะตัวกรองปัจจุบัน (all / file / link)
+    let searchKeyword = "";      // 🔍 คำค้นหาปัจจุบัน
 
     const userNameDisplay = document.getElementById("userNameDisplay");
     const portfolioCountDisplay = document.getElementById("portfolioCountDisplay");
@@ -16,39 +19,40 @@ document.addEventListener("DOMContentLoaded", () => {
     const fileInputHidden = document.getElementById("fileInputHidden");
     const portfolioContainer = document.getElementById("portfolioContainer");
 
+    const searchPortfolioInput = document.getElementById("searchPortfolioInput");
+    const filterTabBtns = document.querySelectorAll(".filter-tab-btn");
+
     const previewModal = document.getElementById("previewModal");
     const modalContentArea = document.getElementById("modalContentArea");
     const closeModalBtn = document.getElementById("closeModalBtn");
     const modalDownloadBtn = document.getElementById("modalDownloadBtn");
+    const settingsBtn = document.getElementById("settingsBtn");
 
     let scale = 1; let pointX = 0; let pointY = 0; let startX = 0; let startY = 0;
     let isPanning = false; let evCache = []; let prevDiff = -1;
 
-    // ✨ ฟังก์ชันปรับให้ปุ่ม "จาง/สว่าง" ขึ้นตอน Hover (ไม่ขยายตัวแล้ว)
+    // ✨ ฟังก์ชันปรับให้ปุ่ม "จาง/สว่าง" ขึ้นตอน Hover
     function addButtonHoverEffect(btn, originalBg, hoverBg) {
         if (!btn) return;
         btn.style.transition = "all 0.2s ease-in-out";
-        btn.style.opacity = "0.85"; // ค่าเริ่มต้นให้จางลงเล็กน้อยหล่อ ๆ
+        btn.style.opacity = "0.85";
         
         btn.onmouseenter = () => {
             if (hoverBg) btn.style.background = hoverBg;
-            btn.style.opacity = "1"; // สว่างขึ้นเต็ม 100% ตอนชี้เมาส์
+            btn.style.opacity = "1";
         };
         
         btn.onmouseleave = () => {
             if (originalBg) btn.style.background = originalBg;
-            btn.style.opacity = "0.85"; // กลับมาจางเท่าเดิม
+            btn.style.opacity = "0.85";
         };
     }
 
     // 🎨 ฟังก์ชันอัปเดตธีมสีหน้าหลักให้แมตช์กับสีพื้นหลัง
     function applyGlobalTheme(color) {
         document.body.style.background = color;
-        
-        // ดึงรายการ Card ผลงานทั้งหมดที่แสดงอยู่บนหน้าหลัก ณ ตอนนั้น
         const cards = portfolioContainer ? portfolioContainer.querySelectorAll(".portfolio-card-item") : [];
         
-        // ⚪️ ถ้าเป็นสีขาวคลีน (#ffffff) ปรับตัวอักษรและองค์ประกอบให้เป็นโทนสีเข้ม
         if (color === "#ffffff") {
             document.body.style.color = "#1a202c";
             if (userNameDisplay) userNameDisplay.style.color = "#2d3748";
@@ -57,7 +61,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const titles = document.querySelectorAll(".page-title, .upload-options-box h3");
             titles.forEach(t => t.style.color = "#1a202c");
 
-            // ปรับสีปุ่มหลัก พร้อมใส่ Hover แบบเปลี่ยน Opacity ธีมสว่าง
             if (addPortfolioBtn) {
                 addPortfolioBtn.style.background = "#2b6cb0"; 
                 addPortfolioBtn.style.color = "#ffffff";
@@ -75,14 +78,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 uploadOptionsBox.style.border = "1px solid #e2e8f0";
             }
 
-            // สลับสี Card เป็นสไตล์ธีมสว่าง
             cards.forEach(card => {
                 card.style.background = "rgba(0, 0, 0, 0.05)";
                 card.style.color = "#1a202c";
                 card.style.border = "1px solid rgba(0, 0, 0, 0.1)";
             });
         } else {
-            // ⚫️ ถ้าเป็นสีดำ หรือ สีไล่เฉด ปรับองค์ประกอบให้เป็นโทนสว่าง/โปร่งแสง
             document.body.style.color = "white";
             if (userNameDisplay) userNameDisplay.style.color = "white";
             if (portfolioCountDisplay) portfolioCountDisplay.style.color = "white";
@@ -90,7 +91,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const titles = document.querySelectorAll(".page-title, .upload-options-box h3");
             titles.forEach(t => t.style.color = "white");
 
-            // คืนค่าปุ่มเป็นสไตล์เดิม พร้อมใส่ Hover แบบเปลี่ยน Opacity ธีมมืด
             if (addPortfolioBtn) {
                 addPortfolioBtn.style.background = "rgba(255, 255, 255, 0.2)";
                 addPortfolioBtn.style.color = "white";
@@ -108,7 +108,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 uploadOptionsBox.style.border = "none";
             }
 
-            // สลับสี Card เป็นสไตล์ธีมมืด
             cards.forEach(card => {
                 card.style.background = "rgba(255, 255, 255, 0.08)";
                 card.style.color = "white";
@@ -116,7 +115,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
-        // ใส่ฟังก์ชันปรับความจางให้ปุ่มระบบอื่น ๆ
         if (closeModalBtn) addButtonHoverEffect(closeModalBtn, "transparent", "rgba(255,255,255,0.1)");
         if (modalDownloadBtn) addButtonHoverEffect(modalDownloadBtn, "#4a5568", "#2d3748");
         if (settingsBtn) addButtonHoverEffect(settingsBtn, "transparent", "transparent");
@@ -131,11 +129,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // เรียกใช้งานธีมสีทันทีเมื่อเปิดหน้าจอ
     const savedBg = localStorage.getItem("userBackground") || "linear-gradient(180deg, #0f0c1b 0%, #bd00ff 100%)";
     
-    // ⚙️ ปุ่มฟันเฟืองลิงก์ไปหน้าตั้งค่า
-    const settingsBtn = document.getElementById("settingsBtn");
     if (settingsBtn) {
         settingsBtn.addEventListener("click", () => {
             window.location.href = "settings.html";
@@ -162,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else { window.location.href = "index.html"; }
     });
 
-    // ดึงข้อมูลรูปภาพและลิงก์มาแสดงผล
+    // 🔄 ฟังก์ชันสำหรับดึงข้อมูลจาก Firebase และตรวจสอบเงื่อนไขจำนวนผลงานเพื่อซ่อนปุ่มเพิ่มผลงาน
     async function loadPortfolios() {
         if (!currentUserId || !portfolioContainer) return;
         try {
@@ -170,120 +165,176 @@ document.addEventListener("DOMContentLoaded", () => {
             const loadingColor = currentTheme === "#ffffff" ? "#2d3748" : "white";
             
             portfolioContainer.innerHTML = `<p style='color: ${loadingColor}; text-align: center; opacity: 0.7;'>กำลังดึงรายการผลงาน...</p>`;
+            
             const portfolioRef = collection(db, "portfolios");
             const q = query(portfolioRef, where("userId", "==", currentUserId));
             const querySnapshot = await getDocs(q);
 
-            portfolioContainer.innerHTML = ""; 
-            let count = 0;
+            localPortfoliosRaw = [];
+            querySnapshot.forEach((docItem) => {
+                localPortfoliosRaw.push({
+                    id: docItem.id,
+                    ...docItem.data()
+                });
+            });
 
-            if (querySnapshot.empty) {
-                const emptyColor = currentTheme === "#ffffff" ? "#718096" : "#a0aec0";
-                portfolioContainer.innerHTML = `<p style='color: ${emptyColor}; text-align: center; font-size: 14px;'>ยังไม่มีผลงานที่บันทึกไว้</p>`;
-                portfolioCountDisplay.textContent = `จำนวนผลงาน: 0 ชิ้น`;
-                return;
+            // 🎯 กฎเหล็ก: ซ่อนปุ่มเพิ่มผลงานทั้งหมดทันที ถ้ามีผลงานตั้งแต่ 1 ชิ้นขึ้นไป
+            const totalCount = localPortfoliosRaw.length;
+            if (totalCount >= 1) {
+                if (addPortfolioBtn) addPortfolioBtn.style.display = "none";
+                if (floatingAddBtn) floatingAddBtn.style.display = "none";
+                if (uploadOptionsBox) uploadOptionsBox.style.display = "none";
+            } else {
+                if (addPortfolioBtn) addPortfolioBtn.style.display = "flex";
+                if (floatingAddBtn) floatingAddBtn.style.display = "flex";
             }
 
-            querySnapshot.forEach((documentItem) => {
-                count++;
-                const data = documentItem.data();
-                const docId = documentItem.id; 
-                
-                const card = document.createElement("div");
-                card.classList.add("portfolio-card-item"); 
-                
-                // ปรับดีไซน์ Card ผลงานตามธีมสีพื้นหลัง
-                if (currentTheme === "#ffffff") {
-                    card.style.background = "rgba(0, 0, 0, 0.05)";
-                    card.style.color = "#1a202c";
-                    card.style.border = "1px solid rgba(0, 0, 0, 0.1)";
-                } else {
-                    card.style.background = "rgba(255, 255, 255, 0.08)";
-                    card.style.color = "white";
-                    card.style.border = "1px solid rgba(255, 255, 255, 0.1)";
-                }
-                
-                card.style.padding = "15px";
-                card.style.borderRadius = "12px";
-                card.style.display = "flex";
-                card.style.alignItems = "center";
-                card.style.justifyContent = "space-between";
-                card.style.transition = "background 0.3s ease, color 0.3s ease"; 
-
-                let actionButton = "";
-                let typeIcon = "";
-
-                if (data.fileType && data.fileType.startsWith("image/")) {
-                    typeIcon = `<img src="${data.content}" style="width: 42px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2)"/>`;
-                    actionButton = `<button class="view-file-btn" data-id="${docId}" style="background: #4a5568; color: white; padding: 6px 12px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; margin-right: 8px; cursor: pointer;"><i class="fa-solid fa-eye"></i> ดูรูปภาพ</button>`;
-                } else {
-                    typeIcon = `<i class="fa-solid fa-link" style="font-size: 20px; color: #4299e1;"></i>`;
-                    actionButton = `<a class="view-link-btn" href="${data.content}" target="_blank" style="background: #2b6cb0; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: bold; margin-right: 8px; display: inline-block;"><i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดลิงก์</a>`;
-                }
-
-                card.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 15px; width: 65%;">
-                        <div style="display: flex; align-items: center; justify-content: center; width: 45px;">${typeIcon}</div>
-                        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;">
-                            <strong style="display: block; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${data.title}</strong>
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        ${actionButton}
-                        <button class="delete-portfolio-btn" data-id="${docId}" style="background: transparent; color: #fc8181; border: none; padding: 6px; cursor: pointer; font-size: 16px;">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                `;
-                portfolioContainer.appendChild(card);
-            });
-
-            portfolioCountDisplay.textContent = `จำนวนผลงาน: ${count} ชิ้น`;
-
-            // ✨ ใส่ระบบ Hover สว่าง/จาง ให้กับปุ่มทั้งหมดภายใน Card ผลงาน
-            document.querySelectorAll(".view-file-btn").forEach(btn => addButtonHoverEffect(btn, "#4a5568", "#2d3748"));
-            document.querySelectorAll(".view-link-btn").forEach(btn => addButtonHoverEffect(btn, "#2b6cb0", "#1d4ed8"));
-            document.querySelectorAll(".delete-portfolio-btn").forEach(btn => addButtonHoverEffect(btn, "transparent", "transparent"));
-
-            // ดึงพรีวิวรูปขึ้นมาดูแบบซูมได้
-            document.querySelectorAll(".view-file-btn").forEach(btn => {
-                btn.addEventListener("click", function() {
-                    const idToView = this.getAttribute("data-id");
-                    const targetDoc = querySnapshot.docs.find(d => d.id === idToView);
-                    if (targetDoc && previewModal && modalContentArea) {
-                        const fileData = targetDoc.data();
-                        modalContentArea.innerHTML = "";
-                        
-                        scale = 1; pointX = 0; pointY = 0; evCache = []; prevDiff = -1;
-
-                        if (modalDownloadBtn) {
-                            modalDownloadBtn.href = fileData.content;
-                            modalDownloadBtn.setAttribute("download", fileData.title);
-                            modalDownloadBtn.style.display = "flex"; 
-                        }
-
-                        modalContentArea.innerHTML = `<img id="zoomable-img" src="${fileData.content}" style="max-width: 100%; max-height: 100%; object-fit: contain; transform: translate(0px, 0px) scale(1); transform-origin: center; cursor: grab; user-select: none; transition: transform 0.1s ease-out;" draggable="false" />`;
-                        initZoomAndPan();
-                        previewModal.style.display = "flex";
-                    }
-                });
-            });
-
-            // ลบรูปภาพหรือลิงก์
-            document.querySelectorAll(".delete-portfolio-btn").forEach(btn => {
-                btn.addEventListener("click", async function() {
-                    const idToDelete = this.getAttribute("data-id");
-                    if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?")) {
-                        try {
-                            await deleteDoc(doc(db, "portfolios", idToDelete));
-                            loadPortfolios(); 
-                        } catch (err) { console.error(err); }
-                    }
-                });
-            });
+            portfolioCountDisplay.textContent = `จำนวนผลงาน: ${totalCount} ชิ้น`;
+            
+            // สั่งให้เรนเดอร์เนื้อหาการค้นหาและฟิลเตอร์บนหน้าจอ
+            renderFilteredPortfolios();
 
         } catch (error) { console.error(error); }
     }
+
+    // 🎯 ฟังก์ชันคำนวณ Filter และช่องค้นหา แล้ววาด Card ลงบนหน้าจอ
+    function renderFilteredPortfolios() {
+        if (!portfolioContainer) return;
+        portfolioContainer.innerHTML = "";
+        
+        const currentTheme = localStorage.getItem("userBackground") || "linear-gradient(180deg, #0f0c1b 0%, #bd00ff 100%)";
+
+        // กรองตามประเภท (ทั้งหมด / ไฟล์ / ลิงก์) และ กรองด้วยคีย์เวิร์ดในช่องค้นหาพร้อมกัน
+        const filteredList = localPortfoliosRaw.filter(item => {
+            const matchType = (currentFilter === "all") || (item.type === currentFilter);
+            const matchSearch = item.title.toLowerCase().includes(searchKeyword.toLowerCase());
+            return matchType && matchSearch;
+        });
+
+        if (filteredList.length === 0) {
+            const emptyColor = currentTheme === "#ffffff" ? "#718096" : "#a0aec0";
+            portfolioContainer.innerHTML = `<p style='color: ${emptyColor}; text-align: center; font-size: 14px;'>ไม่พบผลงานที่ตรงตามเงื่อนไข</p>`;
+            return;
+        }
+
+        filteredList.forEach((data) => {
+            const docId = data.id;
+            const card = document.createElement("div");
+            card.classList.add("portfolio-card-item");
+            
+            if (currentTheme === "#ffffff") {
+                card.style.background = "rgba(0, 0, 0, 0.05)";
+                card.style.color = "#1a202c";
+                card.style.border = "1px solid rgba(0, 0, 0, 0.1)";
+            } else {
+                card.style.background = "rgba(255, 255, 255, 0.08)";
+                card.style.color = "white";
+                card.style.border = "1px solid rgba(255, 255, 255, 0.1)";
+            }
+            
+            card.style.padding = "15px";
+            card.style.borderRadius = "12px";
+            card.style.display = "flex";
+            card.style.alignItems = "center";
+            card.style.justifyContent = "space-between";
+            card.style.transition = "background 0.3s ease, color 0.3s ease"; 
+
+            let actionButton = "";
+            let typeIcon = "";
+
+            if (data.fileType && data.fileType.startsWith("image/")) {
+                typeIcon = `<img src="${data.content}" style="width: 42px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2)"/>`;
+                actionButton = `<button class="view-file-btn" data-id="${docId}" style="background: #4a5568; color: white; padding: 6px 12px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; margin-right: 8px; cursor: pointer;"><i class="fa-solid fa-eye"></i> ดูรูปภาพ</button>`;
+            } else {
+                typeIcon = `<i class="fa-solid fa-link" style="font-size: 20px; color: #4299e1;"></i>`;
+                actionButton = `<a class="view-link-btn" href="${data.content}" target="_blank" style="background: #2b6cb0; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: bold; margin-right: 8px; display: inline-block;"><i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดลิงก์</a>`;
+            }
+
+            card.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 15px; width: 65%;">
+                    <div style="display: flex; align-items: center; justify-content: center; width: 45px;">${typeIcon}</div>
+                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;">
+                        <strong style="display: block; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${data.title}</strong>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    ${actionButton}
+                    <button class="delete-portfolio-btn" data-id="${docId}" style="background: transparent; color: #fc8181; border: none; padding: 6px; cursor: pointer; font-size: 16px;">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            `;
+            portfolioContainer.appendChild(card);
+        });
+
+        // เปิดระบบเอฟเฟกต์ปุ่ม Hover ให้ทำงานต่อเนื่อง
+        document.querySelectorAll(".view-file-btn").forEach(btn => addButtonHoverEffect(btn, "#4a5568", "#2d3748"));
+        document.querySelectorAll(".view-link-btn").forEach(btn => addButtonHoverEffect(btn, "#2b6cb0", "#1d4ed8"));
+        document.querySelectorAll(".delete-portfolio-btn").forEach(btn => addButtonHoverEffect(btn, "transparent", "transparent"));
+
+        // ผูกสคริปต์ปุ่มคลิกดูภาพไฟล์พรีวิว
+        document.querySelectorAll(".view-file-btn").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const idToView = this.getAttribute("data-id");
+                const targetData = localPortfoliosRaw.find(d => d.id === idToView);
+                if (targetData && previewModal && modalContentArea) {
+                    modalContentArea.innerHTML = "";
+                    scale = 1; pointX = 0; pointY = 0; evCache = []; prevDiff = -1;
+
+                    if (modalDownloadBtn) {
+                        modalDownloadBtn.href = targetData.content;
+                        modalDownloadBtn.setAttribute("download", targetData.title);
+                        modalDownloadBtn.style.display = "flex"; 
+                    }
+
+                    modalContentArea.innerHTML = `<img id="zoomable-img" src="${targetData.content}" style="max-width: 100%; max-height: 100%; object-fit: contain; transform: translate(0px, 0px) scale(1); transform-origin: center; cursor: grab; user-select: none; transition: transform 0.1s ease-out;" draggable="false" />`;
+                    initZoomAndPan();
+                    previewModal.style.display = "flex";
+                }
+            });
+        });
+
+        // ผูกสคริปต์ลบผลงานแยกชิ้น
+        document.querySelectorAll(".delete-portfolio-btn").forEach(btn => {
+            btn.addEventListener("click", async function() {
+                const idToDelete = this.getAttribute("data-id");
+                if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?")) {
+                    try {
+                        await deleteDoc(doc(db, "portfolios", idToDelete));
+                        loadPortfolios(); 
+                    } catch (err) { console.error(err); }
+                }
+            });
+        });
+    }
+
+    // 🔍 ผูกระบบช่องค้นหาผลงาน (พิมพ์แล้วกรองทันที)
+    if (searchPortfolioInput) {
+        searchPortfolioInput.addEventListener("input", (e) => {
+            searchKeyword = e.target.value;
+            renderFilteredPortfolios();
+        });
+    }
+
+    // 📂 ผูกระบบแท็บกดเลือกเมนูตัวกรอง (ทั้งหมด / ไฟล์ / ลิงก์)
+    filterTabBtns.forEach(btn => {
+        btn.addEventListener("click", function() {
+            filterTabBtns.forEach(b => {
+                b.classList.remove("active");
+                b.style.background = "rgba(255, 255, 255, 0.05)";
+                b.style.color = "rgba(255, 255, 255, 0.7)";
+                b.style.border = "1px solid rgba(255, 255, 255, 0.1)";
+            });
+            
+            this.classList.add("active");
+            this.style.background = "rgba(255, 255, 255, 0.2)";
+            this.style.color = "white";
+            this.style.border = "1px solid rgba(255, 255, 255, 0.2)";
+            
+            currentFilter = this.getAttribute("data-filter");
+            renderFilteredPortfolios();
+        });
+    });
 
     // ฟังก์ชันซูมรูปภาพ เข้า-ออก
     function initZoomAndPan() {
@@ -398,7 +449,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (addPortfolioBtn) addPortfolioBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleUploadOptions(); });
     if (floatingAddBtn) floatingAddBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleUploadOptions(); });
 
-    // ✨ เมนูตัวเลือกย่อย ปรับให้สว่างขึ้นตอนชี้เมาส์ (ไม่ขยับซ้ายขวาแล้ว)
     optionItems.forEach(item => {
         item.style.transition = "opacity 0.2s ease";
         item.style.opacity = "0.8";
