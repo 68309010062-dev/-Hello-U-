@@ -4,7 +4,6 @@ import { auth, db } from "./firebase-config.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     let currentUser = null;
-    let uploadedAvatarBase64 = null; // ตัวแปรเก็บภาพ Base64 ชั่วคราว
 
     // 1. ดึง Element จากหน้าจอ
     const userNameDisplay = document.getElementById("userNameDisplay");
@@ -25,6 +24,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const logoutBtn = document.getElementById("logoutBtn");
     const deleteAccountBtn = document.getElementById("deleteAccountBtn");
+    const deleteModal = document.getElementById("deleteModal");
+    const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+    const finalDeleteBtn = document.getElementById("finalDeleteBtn");
+    const deleteConfirmInput = document.getElementById("deleteConfirmInput");
+    const modalUserEmailText = document.getElementById("modalUserEmailText");
 
     // ฟังก์ชันเพิ่มเอฟเฟกต์ให้กับปุ่มย้อนกลับ
     if (backToMainBtn) {
@@ -48,6 +52,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (color === "#ffffff") {
             document.body.style.color = "#1a202c";
+            if (userNameDisplay) userNameDisplay.style.color = "#000000";
+            if (portfolioCountDisplay) portfolioCountDisplay.style.color = "#000000";
+
             if (topBar) {
                 topBar.style.background = "rgba(0, 0, 0, 0.05)";
                 topBar.style.borderBottom = "1px solid rgba(0, 0, 0, 0.1)";
@@ -60,6 +67,9 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         } else {
             document.body.style.color = "white";
+            if (userNameDisplay) userNameDisplay.style.color = "white";
+            if (portfolioCountDisplay) portfolioCountDisplay.style.color = "white";
+
             if (topBar) {
                 topBar.style.background = "rgba(255, 255, 255, 0.1)";
                 topBar.style.borderBottom = "1px solid rgba(255, 255, 255, 0.1)";
@@ -83,6 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
             let currentName = user.displayName || 'ผู้ใช้ทั่วไป';
             let currentPhoto = user.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
+            // ดึงข้อมูลรูปภาพและชื่อจาก Firestore เป็นหลัก (เพราะรองรับ Base64)
             try {
                 const userDocRef = doc(db, "users", user.uid);
                 const userDocSnap = await getDoc(userDocRef);
@@ -100,13 +111,13 @@ document.addEventListener("DOMContentLoaded", () => {
             userNameDisplay.textContent = `ชื่อผู้ใช้: ${currentName}`;
             if (userAvatar) userAvatar.src = currentPhoto;
 
-            // นำค่าเดิมมาหยอดรอไว้ในช่องแก้ไข
             if (editDisplayName) editDisplayName.value = currentName;
-            if (editAvatarUrl && user.photoURL && !user.photoURL.startsWith("data:")) {
-                editAvatarUrl.value = user.photoURL;
+            
+            // แสดงเฉพาะ URL จริงในช่องกรอก (ถ้าเป็น Base64 ยาว ๆ จะล้างว่างไว้เพื่อไม่ให้หน้าต่างรก)
+            if (editAvatarUrl) {
+                editAvatarUrl.value = currentPhoto.startsWith("data:") ? "" : currentPhoto;
             }
             
-            // ดึงจำนวนผลงานจากฐานข้อมูล
             if (portfolioCountDisplay) {
                 try {
                     const portfolioRef = collection(db, "portfolios");
@@ -122,59 +133,87 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // ตรวจจับการเลือกไฟล์รูปภาพจากเครื่อง และแปลงเป็น Base64
+    // ✂️ ฟังก์ชันย่อขนาดรูปภาพแบบพอดีคำ (150x150 px กำลังสวย)
+    function compressImage(file, maxWidth, maxHeight, callback) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height *= maxWidth / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width *= maxHeight / height;
+                        height = maxHeight;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                callback(compressedBase64);
+            };
+        };
+    }
+
+    // 📸 ตรวจจับการเลือกไฟล์รูปภาพจากเครื่อง
     if (editAvatarFile) {
         editAvatarFile.addEventListener("change", (e) => {
             const file = e.target.files[0];
             if (file) {
-                if (file.size > 2 * 1024 * 1024) { // จำกัดขนาดไฟล์ไม่เกิน 2MB
-                    alert("❌ ขนาดไฟล์ใหญ่เกินไป! กรุณาเลือกไฟล์ที่ขนาดไม่เกิน 2MB ครับ");
-                    editAvatarFile.value = "";
-                    fileNameDisplay.textContent = "ยังไม่ได้เลือกไฟล์";
-                    return;
-                }
                 fileNameDisplay.textContent = file.name;
-                
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    uploadedAvatarBase64 = reader.result; // ได้ไฟล์ Base64
-                    if (editAvatarUrl) editAvatarUrl.value = ""; // ล้างช่อง URL ออกเพื่อไม่ให้ตีกัน
-                };
-                reader.readAsDataURL(file);
+                compressImage(file, 150, 150, (compressedBase64) => {
+                    if (editAvatarUrl) {
+                        editAvatarUrl.value = compressedBase64; 
+                    }
+                });
             }
         });
     }
 
-    // 💾 ฟังก์ชันสำหรับกดปุ่มบันทึกการแก้ไขชื่อและโปรไฟล์
+    // 💾 บันทึกการเปลี่ยนแปลงข้อมูล
     if (saveProfileBtn) {
         saveProfileBtn.addEventListener("click", async () => {
             if (!currentUser) return;
 
             const newName = editDisplayName.value.trim();
-            let newPhotoUrl = editAvatarUrl.value.trim();
+            const newPhotoUrl = editAvatarUrl.value.trim();
 
             if (!newName) {
                 alert("❌ กรุณากรอกชื่อผู้ใช้ด้วยครับ");
                 return;
             }
 
-            // หากมีภาพจากการอัปโหลดไฟล์ ให้ใช้ภาพนั้นแทน URL
-            if (uploadedAvatarBase64) {
-                newPhotoUrl = uploadedAvatarBase64;
-            }
-
             try {
                 saveProfileBtn.disabled = true;
                 saveProfileBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> กำลังบันทึก...`;
 
-                // 1. อัปเดตข้อมูลไปที่ Firebase Authentication
+                // 1. ✨ ทางแก้: ถ้าค่าที่ส่งเป็น Base64 เราจะไม่ส่งไปที่ Firebase Auth เพื่อป้องกัน Error
+                const isBase64 = newPhotoUrl.startsWith("data:");
                 const updateData = { displayName: newName };
-                if (newPhotoUrl) {
+                
+                if (newPhotoUrl && !isBase64) {
                     updateData.photoURL = newPhotoUrl;
+                } else if (isBase64) {
+                    // หากเป็น Base64 ให้ส่งข้อความจำลองสั้น ๆ ไปแทนเพื่อหลบเลี่ยงระบบดักจับของ Auth
+                    updateData.photoURL = "https://uploaded-from-local.storage";
                 }
+                
                 await updateProfile(currentUser, updateData);
 
-                // 2. บันทึกและซิงค์ข้อมูลลงใน Firestore ป้องกันข้อมูลหลุดหาย
+                // 2. บันทึกข้อมูลจริงทั้งหมดลง Firestore (ตารางนี้บันทึก Base64 ได้สบายตามสิทธิ์ Rules)
                 const userDocRef = doc(db, "users", currentUser.uid);
                 await setDoc(userDocRef, {
                     displayName: newName,
@@ -183,15 +222,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     updatedAt: new Date().toISOString()
                 }, { merge: true });
 
-                // 3. ปรับการแสดงผลหน้าเว็บปัจจุบันให้เห็นผลทันที
+                // 3. ปรับการแสดงผลหน้าเว็บให้เป็นข้อมูลล่าสุดทันที
                 userNameDisplay.textContent = `ชื่อผู้ใช้: ${newName}`;
                 if (newPhotoUrl && userAvatar) {
                     userAvatar.src = newPhotoUrl;
                 }
 
+                if (editAvatarFile) editAvatarFile.value = "";
+                if (fileNameDisplay) fileNameDisplay.textContent = "ยังไม่ได้เลือกไฟล์";
+
                 alert("🎉 บันทึกข้อมูลโปรไฟล์ของคุณสำเร็จแล้ว!");
             } catch (error) {
-                console.error(error);
+                console.error("Save Profile Error: ", error);
                 alert("❌ เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง");
             } finally {
                 saveProfileBtn.disabled = false;
@@ -200,7 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // สลับสีพื้นหลังตามการกดปุ่ม
+    // ปุ่มเลือกธีมและลบบัญชียังคงทำงานเหมือนเดิม...
     if (bgWhiteBtn) {
         bgWhiteBtn.addEventListener("click", () => {
             const color = "#ffffff";
@@ -223,7 +265,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ปุ่มลงชื่อออก
     if (logoutBtn) {
         logoutBtn.addEventListener("click", async () => {
             if (confirm("คุณต้องการลงชื่อออกจากระบบใช่หรือไม่?")) {
@@ -237,7 +278,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ปุ่มลบบัญชีผู้ใช้
     if (deleteAccountBtn && deleteModal) {
         deleteAccountBtn.addEventListener("click", () => {
             if (!currentUser) return;
