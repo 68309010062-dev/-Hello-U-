@@ -242,16 +242,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             });
 
-            // 🎯 กฎเหล็ก: ซ่อนปุ่มเพิ่มผลงานทั้งหมดทันที ถ้ามีผลงานตั้งแต่ 1 ชิ้นขึ้นไป
             const totalCount = localPortfoliosRaw.length;
-            if (totalCount >= 1) {
-                if (addPortfolioBtn) addPortfolioBtn.style.display = "none";
-                if (floatingAddBtn) floatingAddBtn.style.display = "none";
-                if (uploadOptionsBox) uploadOptionsBox.style.display = "none";
-            } else {
-                if (addPortfolioBtn) addPortfolioBtn.style.display = "flex";
-                if (floatingAddBtn) floatingAddBtn.style.display = "flex";
-            }
+
+// 1. ปุ่มบน (addPortfolioBtn): ถ้ามีผลงาน >= 1 ชิ้นให้ซ่อนทันที
+if (totalCount >= 1) {
+    if (addPortfolioBtn) addPortfolioBtn.style.display = "none";
+} else {
+    if (addPortfolioBtn) addPortfolioBtn.style.display = "flex";
+}
+
+// 2. ปุ่มล่าง (floatingAddBtn): เปิดให้แสดงผลไว้ตลอดเวลา ไม่ว่าจะเก็บผลงานไว้กี่ชิ้นก็ตาม
+if (floatingAddBtn) floatingAddBtn.style.display = "flex";
 
             portfolioCountDisplay.textContent = `จำนวนผลงาน: ${totalCount} ชิ้น`;
             
