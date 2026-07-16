@@ -22,6 +22,7 @@
     <main class="main-content">
         <h2 class="page-title">หน้าหลัก</h2>
 
+        <!-- ➕ ปุ่มเพิ่มผลงานหลัก (จะถูกซ่อนอัตโนมัติเมื่อมีผลงาน >= 1 ชิ้น) -->
         <button type="button" id="addPortfolioBtn" class="btn-add-portfolio">
             <i class="fa-solid fa-square-plus"></i>
             <span>เพิ่มผลงาน</span>
@@ -43,16 +44,32 @@
                 </div>
                 <span>ลิงก์</span>
             </div>
-
         </div>
 
-        <div id="portfolioContainer" style="margin-top: 30px; display: flex; flex-direction: column; gap: 15px;"></div>
+        <!-- 🔍 ส่วนค้นหาและตัวกรองผลงาน (Search & Filter Section) -->
+        <div id="filterSection" style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px; width: 100%;">
+            <!-- ช่องค้นหา -->
+            <div style="position: relative; width: 100%;">
+                <input type="text" id="searchPortfolioInput" placeholder="🔍 ค้นหาชื่อผลงาน..." style="width: 100%; padding: 12px 16px 12px 40px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: white; font-size: 15px; outline: none;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.5);"></i>
+            </div>
+            
+            <!-- ปุ่มเลือกประเภทการดู -->
+            <div style="display: flex; gap: 8px; width: 100%;">
+                <button type="button" class="filter-tab-btn active" data-filter="all" style="flex: 1; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.2); color: white; font-weight: bold; cursor: pointer; font-size: 14px; transition: all 0.2s;">ทั้งหมด</button>
+                <button type="button" class="filter-tab-btn" data-filter="file" style="flex: 1; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); font-weight: bold; cursor: pointer; font-size: 14px; transition: all 0.2s;">ไฟล์</button>
+                <button type="button" class="filter-tab-btn" data-filter="link" style="flex: 1; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); font-weight: bold; cursor: pointer; font-size: 14px; transition: all 0.2s;">ลิงก์</button>
+            </div>
+        </div>
+
+        <div id="portfolioContainer" style="margin-top: 20px; display: flex; flex-direction: column; gap: 15px;"></div>
     </main>
 
     <button type="button" id="settingsBtn" class="settings-btn" title="ตั้งค่า">
         <i class="fa-solid fa-gear"></i>
     </button>
 
+    <!-- ➕ ปุ่มบวกลอยตัว (จะถูกซ่อนอัตโนมัติเมื่อมีผลงาน >= 1 ชิ้น) -->
     <button type="button" id="floatingAddBtn" class="floating-add-btn" title="เพิ่มอย่างรวดเร็ว">
         <i class="fa-solid fa-plus"></i>
     </button>
@@ -61,19 +78,14 @@
     
     <!-- กล่องพรีวิวผลงาน (Modal Overlay) -->
     <div id="previewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; touch-action: none;">
-        
-        <!-- 🎯 โซนปุ่มควบคุมด้านบนขวา (เพิ่มปุ่มดาวน์โหลด) -->
         <div style="position: absolute; top: 20px; right: 20px; display: flex; gap: 12px; z-index: 10000;">
-            <!-- ปุ่มโหลดไฟล์ (ซ่อนไว้ก่อน เดี๋ยวให้ JS สั่งเปิดและยัดลิงก์ใส่ให้เวลาเปิดไฟล์ชิ้นนั้นๆ) -->
             <a id="modalDownloadBtn" href="#" download="" style="display: none; background: #3182ce; color: white; border-radius: 50%; width: 40px; height: 40px; text-decoration: none; font-size: 18px; align-items: center; justify-content: center; transition: 0.2s;" title="ดาวน์โหลดไฟล์นี้ลงเครื่อง">
                 <i class="fa-solid fa-download"></i>
             </a>
-            <!-- ปุ่ม X ปิดพรีวิว -->
             <button id="closeModalBtn" style="background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center;" title="ปิดหน้าต่าง">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-
         <div id="modalContentArea" style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;"></div>
     </div>
 
