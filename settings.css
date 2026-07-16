@@ -6,23 +6,27 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* ตั้งค่าพื้นหลังเริ่มต้น เป็นสีม่วงไล่เฉดตามรูปแบบดั้งเดิมของแอปพี่ */
+/* 📱 ปรับแต่ง Body ให้ขยายพื้นหลังเต็มจอ 100% ทั้งแนวตั้งและแนวนอน */
 body {
     background: linear-gradient(180deg, #0f0c1b 0%, #bd00ff 100%);
     min-height: 100vh;
+    width: 100%;
     color: white;
     display: flex;
     flex-direction: column;
     align-items: center;
-    transition: background 0.3s ease; /* เพิ่มความสมูทเวลาเปลี่ยนสีพื้นหลัง */
+    align-content: flex-start;
+    overflow-x: hidden;
+    transition: background 0.3s ease;
 }
 
-/* 👤 แถบด้านบน (Top Bar) ปรับสเกลและการจัดวางให้เหมือนหน้าหลัก 100% */
+/* 👤 แถบด้านบน (Top Bar) กว้างเต็มหน้าจอ 100% */
 .top-bar {
     width: 100%;
-    max-width: 480px; /* ขยายขนาดความกว้างเท่าหน้าหลัก */
+    max-width: 100%; 
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     padding: 12px 20px;
     display: flex;
     justify-content: space-between;
@@ -34,7 +38,7 @@ body {
     font-size: 14px;
     font-weight: 500;
     line-height: 1.4;
-    text-align: left; /* จัดชิดซ้ายเหมือนหน้าหลัก */
+    text-align: left;
 }
 
 .avatar-img {
@@ -45,14 +49,15 @@ body {
     object-fit: cover;
 }
 
-/* 📦 กล่องควบคุมหลักของหน้าตั้งค่า ขยายขนาดออกด้านข้างให้สมดุล */
+/* 📦 กล่องควบคุมหลัก กว้างเต็มจอ 100% */
 .settings-container {
     width: 100%;
-    max-width: 480px; /* ขยายเพิ่มพื้นที่ด้านข้างให้เท่ากับแถบด้านบน */
+    max-width: 100%; 
     padding: 24px 20px;
     display: flex;
     flex-direction: column;
     gap: 24px;
+    flex-grow: 1;
 }
 
 .page-title {
@@ -68,6 +73,65 @@ body {
     margin-bottom: 12px;
 }
 
+/* 📝 กล่องจัดตำแหน่งชุดอินพุตแก้ไขโปรไฟล์ */
+.profile-edit-box {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.input-group label {
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #4a5568;
+    background: #0f0c1b;
+    color: white;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+    border-color: #bd00ff;
+}
+
+/* ปุ่มเลือกไฟล์จากเครื่องแบบกำหนดเอง */
+.file-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+    transition: background 0.2s;
+    width: fit-content;
+}
+
+.file-upload-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
 /* โซนปุ่มเปลี่ยนสีพื้นหลัง */
 .color-container {
     display: flex;
@@ -77,7 +141,7 @@ body {
 .color-btn {
     width: 60px;
     height: 60px;
-    border: 2.5px solid #d600ff; /* กรอบสีชมพูสะท้อนแสงตามดีไซน์เดิม */
+    border: 2.5px solid #d600ff;
     border-radius: 10px;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -88,14 +152,13 @@ body {
     transform: scale(1.05);
 }
 
-/* รายละเอียดแต่ละสี */
 .color-white { background: #ffffff; }
 .color-black { background: #000000; }
 .color-gradient { 
     background: linear-gradient(135deg, #2b1f54 0%, #bd00ff 100%); 
 }
 
-/* สไตล์ปุ่มกดด้านล่าง (คงเดิม ไม่เปลี่ยนหน้าตา) */
+/* สไตล์ปุ่มกด */
 .action-container {
     display: flex;
     flex-direction: column;
@@ -122,6 +185,15 @@ body {
 
 .btn:active {
     transform: scale(0.98);
+}
+
+/* ปุ่มบันทึกข้อมูล (สีม่วง) */
+.btn-save {
+    background: #bd00ff;
+    margin-top: 6px;
+}
+.btn-save:hover {
+    filter: brightness(1.1);
 }
 
 /* ปุ่มลงชื่อออก (สีส้มแดง) */
