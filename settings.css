@@ -198,7 +198,7 @@ body {
 
 /* ปุ่มลงชื่อออก (สีส้มแดง) */
 .btn-logout {
-    background: #ff4b4b;
+    background: #a1a1a1;
 }
 .btn-logout:hover {
     filter: brightness(1.1);
