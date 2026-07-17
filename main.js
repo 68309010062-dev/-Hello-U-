@@ -54,18 +54,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const cards = portfolioContainer ? portfolioContainer.querySelectorAll(".portfolio-card-item") : [];
         const filterBtns = document.querySelectorAll(".filter-tab-btn");
         
-        // ดึง Elements ส่วนช่องค้นหามาจัดการสี
         const searchInput = document.getElementById("searchPortfolioInput");
         const searchIcon = document.querySelector(".fa-magnifying-glass");
         
         if (color === "#ffffff") {
             document.body.style.color = "#1a202c";
-            
-            // 👤 ปรับข้อความหัวเว็บให้เป็นสีดำเข้มชัดเจน
             if (userNameDisplay) userNameDisplay.style.color = "#000000";
             if (portfolioCountDisplay) portfolioCountDisplay.style.color = "#000000";
             
-            // 🔍 ปรับแต่งช่องค้นหา (Search Input) ให้เห็นตัวอักษรสีดำตอนพิมพ์
             if (searchInput) {
                 searchInput.style.background = "#f7fafc";
                 searchInput.style.color = "#000000";
@@ -78,13 +74,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const titles = document.querySelectorAll(".page-title, .upload-options-box h3");
             titles.forEach(t => t.style.color = "#1a202c");
 
-            // ⚙️ ปรับปุ่มเฟืองตั้งค่า
             if (settingsBtn) {
                 settingsBtn.style.color = "#1a202c";
                 settingsBtn.style.background = "rgba(0, 0, 0, 0.05)";
             }
 
-            // 📂 ปรับแต่งปุ่มกลุ่มฟิลเตอร์ (หมวดหมู่) สำหรับธีมสีขาว
             filterBtns.forEach(btn => {
                 if (btn.classList.contains("active")) {
                     btn.style.background = "#2b6cb0";
@@ -120,12 +114,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 card.style.border = "1px solid rgba(0, 0, 0, 0.08)";
             });
         } else {
-            // 🌌 สำหรับธีมมืด (สีเดิม)
             document.body.style.color = "white";
             if (userNameDisplay) userNameDisplay.style.color = "white";
             if (portfolioCountDisplay) portfolioCountDisplay.style.color = "white";
             
-            // คืนค่าช่องค้นหาสำหรับธีมมืด
             if (searchInput) {
                 searchInput.style.background = "rgba(255,255,255,0.1)";
                 searchInput.style.color = "white";
@@ -184,7 +176,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (settingsBtn) addButtonHoverEffect(settingsBtn, "transparent", "transparent");
     }
 
-    // 🔄 ระบบดักฟัง Real-time ข้ามหน้าต่าง
     window.addEventListener('storage', (e) => {
         if (e.key === 'userBackground') {
             const newColor = e.newValue || "linear-gradient(180deg, #0f0c1b 0%, #bd00ff 100%)";
@@ -211,17 +202,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 const userDocRef = doc(db, "users", user.uid);
                 const userDocSnap = await getDoc(userDocRef);
                 if (userDocSnap.exists()) {
-                    userNameDisplay.textContent = `ชื่อผู้ใช้: ${userDocSnap.data().displayName || user.displayName || 'ผู้ใช้ทั่วไป'}`;
+                    if (userNameDisplay) userNameDisplay.textContent = `ชื่อผู้ใช้: ${userDocSnap.data().displayName || user.displayName || 'ผู้ใช้ทั่วไป'}`;
                 } else {
-                    userNameDisplay.textContent = `ชื่อผู้ใช้: ${user.displayName || 'กำลังโหลด...'}`;
+                    if (userNameDisplay) userNameDisplay.textContent = `ชื่อผู้ใช้: ${user.displayName || 'กำลังโหลด...'}`;
                 }
-            } catch (error) { userNameDisplay.textContent = `ชื่อผู้ใช้: ${user.displayName || 'พบข้อผิดพลาด'}`; }
+            } catch (error) { 
+                if (userNameDisplay) userNameDisplay.textContent = `ชื่อผู้ใช้: ${user.displayName || 'พบข้อผิดพลาด'}`; 
+            }
             if (user.photoURL && userAvatar) userAvatar.src = user.photoURL;
             loadPortfolios();
         } else { window.location.href = "index.html"; }
     });
 
-    // 🔄 ฟังก์ชันสำหรับดึงข้อมูลจาก Firebase และตรวจสอบเงื่อนไขจำนวนผลงานเพื่อซ่อนปุ่มเพิ่มผลงาน
+    // 🔄 ดึงข้อมูลผลงาน
     async function loadPortfolios() {
         if (!currentUserId || !portfolioContainer) return;
         try {
@@ -244,35 +237,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const totalCount = localPortfoliosRaw.length;
 
-// 1. ปุ่มบน (addPortfolioBtn): ถ้ามีผลงาน >= 1 ชิ้นให้ซ่อนทันที
-if (totalCount >= 1) {
-    if (addPortfolioBtn) addPortfolioBtn.style.display = "none";
-} else {
-    if (addPortfolioBtn) addPortfolioBtn.style.display = "flex";
-}
+            if (totalCount >= 1) {
+                if (addPortfolioBtn) addPortfolioBtn.style.display = "none";
+            } else {
+                if (addPortfolioBtn) addPortfolioBtn.style.display = "flex";
+            }
 
-// 2. ปุ่มล่าง (floatingAddBtn): เปิดให้แสดงผลไว้ตลอดเวลา ไม่ว่าจะเก็บผลงานไว้กี่ชิ้นก็ตาม
-if (floatingAddBtn) floatingAddBtn.style.display = "flex";
-
-            portfolioCountDisplay.textContent = `จำนวนผลงาน: ${totalCount} ชิ้น`;
+            if (floatingAddBtn) floatingAddBtn.style.display = "flex";
+            if (portfolioCountDisplay) portfolioCountDisplay.textContent = `จำนวนผลงาน: ${totalCount} ชิ้น`;
             
-            // สั่งให้เรนเดอร์เนื้อหาการค้นหาและฟิลเตอร์บนหน้าจอ
             renderFilteredPortfolios();
 
         } catch (error) { console.error(error); }
     }
 
-    // 🎯 ฟังก์ชันคำนวณ Filter และช่องค้นหา แล้ววาด Card ลงบนหน้าจอ
+    // 🎯 เรนเดอร์การ์ดผลงานลงหน้าจอ
     function renderFilteredPortfolios() {
         if (!portfolioContainer) return;
         portfolioContainer.innerHTML = "";
         
         const currentTheme = localStorage.getItem("userBackground") || "linear-gradient(180deg, #0f0c1b 0%, #bd00ff 100%)";
 
-        // กรองตามประเภท (ทั้งหมด / ไฟล์ / ลิงก์) และ กรองด้วยคีย์เวิร์ดในช่องค้นหาพร้อมกัน
         const filteredList = localPortfoliosRaw.filter(item => {
             const matchType = (currentFilter === "all") || (item.type === currentFilter);
-            const matchSearch = item.title.toLowerCase().includes(searchKeyword.toLowerCase());
+            // 🛠️ เพิ่ม .trim() ป้องกันกรณีพิมพ์เว้นวรรค
+            const matchSearch = item.title.toLowerCase().includes(searchKeyword.trim().toLowerCase());
             return matchType && matchSearch;
         });
 
@@ -307,9 +296,14 @@ if (floatingAddBtn) floatingAddBtn.style.display = "flex";
             let actionButton = "";
             let typeIcon = "";
 
-            if (data.fileType && data.fileType.startsWith("image/")) {
-                typeIcon = `<img src="${data.content}" style="width: 42px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2)"/>`;
-                actionButton = `<button class="view-file-btn" data-id="${docId}" style="background: #4a5568; color: white; padding: 6px 12px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; margin-right: 8px; cursor: pointer;"><i class="fa-solid fa-eye"></i> ดูรูปภาพ</button>`;
+            if (data.type === "file") {
+                const isImgFile = data.content.startsWith("data:image/");
+                if (isImgFile) {
+                    typeIcon = `<img src="${data.content}" style="width: 42px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2)"/>`;
+                } else {
+                    typeIcon = `<i class="fa-solid fa-file-pdf" style="font-size: 28px; color: #fc8181;"></i>`;
+                }
+                actionButton = `<button class="view-file-btn" data-id="${docId}" style="background: #4a5568; color: white; padding: 6px 12px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; margin-right: 8px; cursor: pointer;"><i class="fa-solid fa-eye"></i> ตรวจสอบไฟล์</button>`;
             } else {
                 typeIcon = `<i class="fa-solid fa-link" style="font-size: 20px; color: #4299e1;"></i>`;
                 actionButton = `<a class="view-link-btn" href="${data.content}" target="_blank" style="background: #2b6cb0; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: bold; margin-right: 8px; display: inline-block;"><i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดลิงก์</a>`;
@@ -332,12 +326,11 @@ if (floatingAddBtn) floatingAddBtn.style.display = "flex";
             portfolioContainer.appendChild(card);
         });
 
-        // เปิดระบบเอฟเฟกต์ปุ่ม Hover ให้ทำงานต่อเนื่อง
         document.querySelectorAll(".view-file-btn").forEach(btn => addButtonHoverEffect(btn, "#4a5568", "#2d3748"));
         document.querySelectorAll(".view-link-btn").forEach(btn => addButtonHoverEffect(btn, "#2b6cb0", "#1d4ed8"));
         document.querySelectorAll(".delete-portfolio-btn").forEach(btn => addButtonHoverEffect(btn, "transparent", "transparent"));
 
-        // ผูกสคริปต์ปุ่มคลิกดูภาพไฟล์พรีวิว
+        // ผูกปุ่มคลิกพรีวิวไฟล์ Base64
         document.querySelectorAll(".view-file-btn").forEach(btn => {
             btn.addEventListener("click", function() {
                 const idToView = this.getAttribute("data-id");
@@ -352,20 +345,28 @@ if (floatingAddBtn) floatingAddBtn.style.display = "flex";
                         modalDownloadBtn.style.display = "flex"; 
                     }
 
-                    modalContentArea.innerHTML = `<img id="zoomable-img" src="${targetData.content}" style="max-width: 100%; max-height: 100%; object-fit: contain; transform: translate(0px, 0px) scale(1); transform-origin: center; cursor: grab; user-select: none; transition: transform 0.1s ease-out;" draggable="false" />`;
-                    initZoomAndPan();
+                    const isImage = targetData.content.startsWith("data:image/");
+
+                    if (isImage) {
+                        modalContentArea.innerHTML = `<img id="zoomable-img" src="${targetData.content}" style="max-width: 100%; max-height: 100%; object-fit: contain; transform: translate(0px, 0px) scale(1); transform-origin: center; cursor: grab; user-select: none; transition: transform 0.1s ease-out;" draggable="false" />`;
+                        initZoomAndPan();
+                    } else {
+                        modalContentArea.innerHTML = `<object data="${targetData.content}" type="application/pdf" width="100%" height="100%" style="border-radius: 8px;"><p>ไม่สามารถแสดงพรีวิวได้ <a href="${targetData.content}" download="${targetData.title}">ดาวน์โหลดไฟล์ที่นี่</a></p></object>`;
+                    }
+                    
                     previewModal.style.display = "flex";
                 }
             });
         });
 
-        // ผูกสคริปต์ลบผลงานแยกชิ้น
+        // ปุ่มลบรายการผลงาน
         document.querySelectorAll(".delete-portfolio-btn").forEach(btn => {
             btn.addEventListener("click", async function() {
                 const idToDelete = this.getAttribute("data-id");
-                if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?")) {
+                if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบผลงานรายการนี้?")) {
                     try {
                         await deleteDoc(doc(db, "portfolios", idToDelete));
+                        alert("🗑️ ลบผลงานสำเร็จ");
                         loadPortfolios(); 
                     } catch (err) { console.error(err); }
                 }
@@ -373,7 +374,6 @@ if (floatingAddBtn) floatingAddBtn.style.display = "flex";
         });
     }
 
-    // 🔍 ผูกระบบช่องค้นหาผลงาน (พิมพ์แล้วกรองทันที)
     if (searchPortfolioInput) {
         searchPortfolioInput.addEventListener("input", (e) => {
             searchKeyword = e.target.value;
@@ -381,42 +381,49 @@ if (floatingAddBtn) floatingAddBtn.style.display = "flex";
         });
     }
 
-    // 📂 ผูกระบบแท็บกดเลือกเมนูตัวกรอง (ทั้งหมด / ไฟล์ / ลิงก์)
     filterTabBtns.forEach(btn => {
         btn.addEventListener("click", function() {
             filterTabBtns.forEach(b => b.classList.remove("active"));
             this.classList.add("active");
-            
             currentFilter = this.getAttribute("data-filter");
-            
-            // สั่งคำนวณสีปุ่มใหม่ตามธีมปัจจุบันทันทีหลังคลิก
             const currentTheme = localStorage.getItem("userBackground") || "linear-gradient(180deg, #0f0c1b 0%, #bd00ff 100%)";
             applyGlobalTheme(currentTheme);
-            
             renderFilteredPortfolios();
         });
     });
 
-    // ฟังก์ชันซูมรูปภาพ เข้า-ออก
+    // 🛠️ แก้ไขและรวมการทำงานของ Zoom & Pan ให้มีประสิทธิภาพ ไม่ซ้อน Event
     function initZoomAndPan() {
         const img = document.getElementById("zoomable-img");
-        if (!img) return;
+        if (!img || !modalContentArea) return;
+        
         const updateTransform = () => { img.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; };
-        modalContentArea.addEventListener("wheel", (e) => {
+        
+        // ล้าง Event เก่าก่อนผูกใหม่ทุกครั้ง ป้องกันปัญหากดซ้ำแล้วความเร็วเพิ่มทวีคูณ
+        const cloneContent = modalContentArea.cloneNode(true);
+        modalContentArea.parentNode.replaceChild(cloneContent, modalContentArea);
+        
+        // ดึง Element ใหม่หลังการ clone เพื่อผูก Event ใหม่ที่สะอาดสะอ้าน
+        const newModalContentArea = document.getElementById("modalContentArea");
+        const newImg = document.getElementById("zoomable-img");
+
+        newModalContentArea.addEventListener("wheel", (e) => {
             e.preventDefault();
             const zoomSpeed = 0.1;
             if (e.deltaY < 0) { scale = Math.min(scale + zoomSpeed, 5); } 
             else { scale = Math.max(scale - zoomSpeed, 0.5); }
             updateTransform();
         }, { passive: false });
-        img.addEventListener("pointerdown", (e) => {
+
+        newImg.addEventListener("pointerdown", (e) => {
             evCache.push(e);
             if (evCache.length === 1) {
-                isPanning = true; img.style.cursor = "grabbing";
+                isPanning = true; newImg.style.cursor = "grabbing";
                 startX = e.clientX - pointX; startY = e.clientY - pointY;
             }
         });
-        img.addEventListener("pointermove", (e) => {
+
+        newImg.addEventListener("pointermove", (e) => {
             const index = evCache.findIndex(ev => ev.pointerId === e.pointerId);
             if (index > -1) evCache[index] = e;
             if (evCache.length === 2) {
@@ -433,71 +440,51 @@ if (floatingAddBtn) floatingAddBtn.style.display = "flex";
                 updateTransform();
             }
         });
+
         const stopPan = (e) => {
             const index = evCache.findIndex(ev => ev.pointerId === e.pointerId);
             if (index > -1) evCache.splice(index, 1);
             if (evCache.length < 2) prevDiff = -1;
-            if (evCache.length === 0) { isPanning = false; img.style.cursor = "grab"; }
+            if (evCache.length === 0) { isPanning = false; newImg.style.cursor = "grab"; }
         };
-        img.addEventListener("pointerup", stopPan);
-        img.addEventListener("pointercancel", stopPan);
-        img.addEventListener("pointerout", stopPan);
-        img.addEventListener("pointerleave", stopPan);
+
+        newImg.addEventListener("pointerup", stopPan);
+        newImg.addEventListener("pointercancel", stopPan);
+        newImg.addEventListener("pointerout", stopPan);
+        newImg.addEventListener("pointerleave", stopPan);
     }
 
     if (previewModal && closeModalBtn) {
         const closePreview = () => {
             previewModal.style.display = "none";
-            modalContentArea.innerHTML = "";
+            // 🛠️ คืนค่ากล่องแสดงเนื้อหาให้ว่างเพื่อล้างความทรงจำสเปซหลังปิดโมดอล
+            if(document.getElementById("modalContentArea")) {
+                document.getElementById("modalContentArea").innerHTML = "";
+            }
             if (modalDownloadBtn) { modalDownloadBtn.style.display = "none"; modalDownloadBtn.href = "#"; }
         };
         closeModalBtn.addEventListener("click", closePreview);
         previewModal.addEventListener("click", (e) => {
-            if (e.target === previewModal || e.target === modalContentArea) { closePreview(); }
+            // เช็ค target id ปัจจุบันหลังจากทำ Clone Node
+            const currentArea = document.getElementById("modalContentArea");
+            if (e.target === previewModal || e.target === currentArea) { closePreview(); }
         });
     }
 
-    // บันทึกข้อมูลลง Firebase
-    async function savePortfolioToFirebase(type, title, content, fileType = null) {
+    // 💾 ฟังก์ชันบันทึกข้อมูลลงฐานข้อมูล Firestore โดยตรง
+    async function savePortfolioToFirebase(type, title, content) {
         if (!currentUserId) return;
         try {
             const portfolioRef = collection(db, "portfolios");
             await addDoc(portfolioRef, {
-                userId: currentUserId, type: type, title: title, content: content, fileType: fileType, createdAt: serverTimestamp() 
+                userId: currentUserId, 
+                type: type, 
+                title: title, 
+                content: content, 
+                createdAt: serverTimestamp() 
             });
             loadPortfolios();
         } catch (error) { alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล"); }
-    }
-
-    // ระบบบีบอัดรูปภาพอัตโนมัติก่อนบันทึก
-    function compressImage(file) {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement("canvas");
-                    let width = img.width;
-                    let height = img.height;
-
-                    const MAX_WIDTH = 1200;
-                    if (width > MAX_WIDTH) {
-                        height = Math.round((height * MAX_WIDTH) / width);
-                        width = MAX_WIDTH;
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext("2d");
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
-                    resolve(compressedBase64);
-                };
-            };
-        });
     }
 
     function toggleUploadOptions() {
@@ -509,6 +496,15 @@ if (floatingAddBtn) floatingAddBtn.style.display = "flex";
 
     if (addPortfolioBtn) addPortfolioBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleUploadOptions(); });
     if (floatingAddBtn) floatingAddBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleUploadOptions(); });
+
+    // 🛠️ เพิ่มฟังก์ชันปิดเมนูอัปโหลดเมื่อผู้ใช้คลิกพื้นที่อื่นข้างนอก (Click Outside)
+    document.addEventListener("click", (e) => {
+        if (uploadOptionsBox && uploadOptionsBox.style.display === "block") {
+            if (!uploadOptionsBox.contains(e.target) && e.target !== addPortfolioBtn && !addPortfolioBtn.contains(e.target) && e.target !== floatingAddBtn && !floatingAddBtn.contains(e.target)) {
+                uploadOptionsBox.style.display = "none";
+            }
+        }
+    });
 
     optionItems.forEach(item => {
         item.style.transition = "opacity 0.2s ease";
@@ -532,23 +528,40 @@ if (floatingAddBtn) floatingAddBtn.style.display = "flex";
     });
 
     if (fileInputHidden) {
-        fileInputHidden.setAttribute("accept", "image/*");
+        fileInputHidden.setAttribute("accept", "image/*, application/pdf");
+        
         fileInputHidden.addEventListener("change", async (event) => {
             const file = event.target.files[0];
             if (!file || !currentUserId) return;
 
-            const title = file.name;
-            const compressedData = await compressImage(file);
-            await savePortfolioToFirebase("file", title, compressedData, "image/jpeg");
-            
+            if (file.size > 1024 * 1024) { 
+                alert("❌ เนื่องจากเราทำงานบนโหมดฟรี 100% ขนาดไฟล์ต้องไม่เกิน 1 MB ครับ แนะนำให้ย่อขนาดรูปภาพก่อนอัปโหลดนะครับ");
+                fileInputHidden.value = "";
+                return;
+            }
+
+            if (portfolioContainer) {
+                portfolioContainer.insertAdjacentHTML('afterbegin', `<p id="uploading-text" style="text-align:center; color:#3182ce; font-weight:bold; padding:15px;">⏳ กำลังประมวลผลและแปลงข้อมูลไฟล์...</p>`);
+            }
+
+            try {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = async () => {
+                    const base64Data = reader.result;
+                    const loadingText = document.getElementById("uploading-text");
+                    if (loadingText) loadingText.remove();
+
+                    await savePortfolioToFirebase("file", file.name, base64Data);
+                    alert("🎉 บันทึกผลงานสำเร็จ!");
+                };
+            } catch (err) {
+                const loadingText = document.getElementById("uploading-text");
+                if (loadingText) loadingText.remove();
+                console.error("Upload failed: ", err);
+                alert("เกิดข้อผิดพลาดในการประมวลผลไฟล์");
+            }
             fileInputHidden.value = ""; 
         });
     }
-
-    document.addEventListener("click", (event) => {
-        if (uploadOptionsBox && uploadOptionsBox.style.display === "block") {
-            const isClickInside = uploadOptionsBox.contains(event.target) || (addPortfolioBtn && addPortfolioBtn.contains(event.target)) || (floatingAddBtn && floatingAddBtn.contains(event.target));
-            if (!isClickInside) uploadOptionsBox.style.display = "none";
-        }
-    });
 });
