@@ -28,26 +28,54 @@ document.addEventListener("DOMContentLoaded", () => {
     const filterTabBtns = document.querySelectorAll(".filter-tab-btn");
     const historyContainer = document.getElementById("historyContainer");
 
-    // --- Sidebar Toggle Logic ---
+    // --- Sidebar Functions & Initial Close State ---
+    function openSidebar() {
+        if (sidebar) {
+            sidebar.classList.add("mobile-open");
+            sidebar.classList.add("active");
+            sidebar.classList.remove("collapsed");
+        }
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.add("active");
+            sidebarOverlay.style.display = "block";
+        }
+        if (toggleIcon) {
+            toggleIcon.className = "fa-solid fa-chevron-left";
+        }
+    }
+
+    function closeSidebar() {
+        if (sidebar) {
+            sidebar.classList.remove("mobile-open");
+            sidebar.classList.remove("active");
+            sidebar.classList.add("collapsed");
+        }
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.remove("active");
+            sidebarOverlay.style.display = "none";
+        }
+        if (toggleIcon) {
+            toggleIcon.className = "fa-solid fa-chevron-right";
+        }
+    }
+
+    // 🟢 บังคับปิด Sidebar ทันทีที่เข้าหน้าเว็บ
+    closeSidebar();
+
+    // --- Sidebar Event Listeners ---
     if (menuToggleBtn && sidebar) {
         menuToggleBtn.addEventListener("click", () => {
-            sidebar.classList.toggle("collapsed");
-            if (sidebarOverlay) sidebarOverlay.classList.toggle("active");
-            
-            if (toggleIcon) {
-                toggleIcon.className = sidebar.classList.contains("collapsed") 
-                    ? "fa-solid fa-chevron-right" 
-                    : "fa-solid fa-chevron-left";
+            const isCollapsed = sidebar.classList.contains("collapsed");
+            if (isCollapsed) {
+                openSidebar();
+            } else {
+                closeSidebar();
             }
         });
     }
 
     if (sidebarOverlay) {
-        sidebarOverlay.addEventListener("click", () => {
-            sidebar.classList.remove("collapsed");
-            sidebarOverlay.classList.remove("active");
-            if (toggleIcon) toggleIcon.className = "fa-solid fa-chevron-left";
-        });
+        sidebarOverlay.addEventListener("click", closeSidebar);
     }
 
     // --- Helper Functions ---
@@ -309,7 +337,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // --- Render History List (อ่านประวัติอย่างเดียว ปิดปุ่มเปิดดู และปิดปุ่มลบ) ---
+    // --- Render History List ---
     function renderFilteredHistory() {
         if (!historyContainer) return;
         historyContainer.innerHTML = "";
@@ -367,7 +395,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const iconBg = isWhite ? "#f8fafc" : "rgba(255,255,255,0.05)";
 
-            // โครงสร้าง Card: แสดงไอคอน + ชื่อ + วันเวลา + ป้ายบอกประเภท เท่านั้น (ไม่มีปุ่มดาวน์โหลด/ไม่มีปุ่มลบ)
             card.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 14px; width: 80%;">
                     <div style="width: 38px; height: 38px; border-radius: 8px; background: ${iconBg}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
