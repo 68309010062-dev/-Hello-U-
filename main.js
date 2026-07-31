@@ -40,32 +40,35 @@ document.addEventListener("DOMContentLoaded", () => {
     let isPanning = false, evCache = [], prevDiff = -1;
 
     // --- Sidebar Toggle Logic (รุ่นแก้ไขบังคับปิดได้ 100%) ---
-    function openSidebar() {
-        if (sidebar) {
-            sidebar.classList.add("mobile-open");
-            sidebar.classList.add("active");
-            sidebar.classList.remove("collapsed");
-        }
-        if (sidebarOverlay) {
-            sidebarOverlay.classList.add("active");
-            sidebarOverlay.style.display = "block";
-        }
+function openSidebar() {
+    if (sidebar) {
+        sidebar.classList.add("mobile-open");
+        sidebar.classList.add("active");
+        sidebar.classList.remove("collapsed");
     }
+    if (sidebarOverlay) {
+        sidebarOverlay.classList.add("active");
+        sidebarOverlay.style.display = "block";
+    }
+}
 
-    function closeSidebar() {
-        if (sidebar) {
-            sidebar.classList.remove("mobile-open");
-            sidebar.classList.remove("active");
-            sidebar.classList.add("collapsed");
-        }
-        if (sidebarOverlay) {
-            sidebarOverlay.classList.remove("active");
-            sidebarOverlay.style.display = "none";
-        }
-        if (toggleIcon) {
-            toggleIcon.className = "fa-solid fa-chevron-right";
-        }
+function closeSidebar() {
+    if (sidebar) {
+        sidebar.classList.remove("mobile-open");
+        sidebar.classList.remove("active");
+        sidebar.classList.add("collapsed");
     }
+    if (sidebarOverlay) {
+        sidebarOverlay.classList.remove("active");
+        sidebarOverlay.style.display = "none";
+    }
+    if (toggleIcon) {
+        toggleIcon.className = "fa-solid fa-chevron-right";
+    }
+}
+
+// 🟢 เพิ่มบรรทัดนี้: บังคับเรียก closeSidebar() ทันทีที่โหลดสคริปต์
+closeSidebar();
 
     // เมื่อกดปุ่มเมนู
     if (menuToggleBtn) {
