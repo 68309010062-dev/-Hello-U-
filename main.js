@@ -39,27 +39,52 @@ document.addEventListener("DOMContentLoaded", () => {
     let scale = 1, pointX = 0, pointY = 0, startX = 0, startY = 0;
     let isPanning = false, evCache = [], prevDiff = -1;
 
-    // --- Sidebar Toggle Logic ---
-    if (menuToggleBtn && sidebar) {
-        menuToggleBtn.addEventListener("click", () => {
-            sidebar.classList.toggle("collapsed");
-            if (sidebarOverlay) sidebarOverlay.classList.toggle("active");
-            
-            if (toggleIcon) {
-                if (sidebar.classList.contains("collapsed")) {
-                    toggleIcon.className = "fa-solid fa-chevron-right";
-                } else {
-                    toggleIcon.className = "fa-solid fa-chevron-left";
-                }
+    // --- Sidebar Toggle Logic (รุ่นแก้ไขบังคับปิดได้ 100%) ---
+    function openSidebar() {
+        if (sidebar) {
+            sidebar.classList.add("mobile-open");
+            sidebar.classList.add("active");
+            sidebar.classList.remove("collapsed");
+        }
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.add("active");
+            sidebarOverlay.style.display = "block";
+        }
+    }
+
+    function closeSidebar() {
+        if (sidebar) {
+            sidebar.classList.remove("mobile-open");
+            sidebar.classList.remove("active");
+            sidebar.classList.add("collapsed");
+        }
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.remove("active");
+            sidebarOverlay.style.display = "none";
+        }
+        if (toggleIcon) {
+            toggleIcon.className = "fa-solid fa-chevron-right";
+        }
+    }
+
+    // เมื่อกดปุ่มเมนู
+    if (menuToggleBtn) {
+        menuToggleBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (sidebar && (sidebar.classList.contains("mobile-open") || sidebar.classList.contains("active"))) {
+                closeSidebar();
+            } else {
+                openSidebar();
             }
         });
     }
 
+    // เมื่อคลิกที่พื้นหลังดำ (Overlay) บนมือถือ -> บังคับปิดทันที
     if (sidebarOverlay) {
-        sidebarOverlay.addEventListener("click", () => {
-            sidebar.classList.remove("collapsed");
-            sidebarOverlay.classList.remove("active");
-            if (toggleIcon) toggleIcon.className = "fa-solid fa-chevron-left";
+        sidebarOverlay.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeSidebar();
         });
     }
 
