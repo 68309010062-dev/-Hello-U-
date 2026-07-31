@@ -29,6 +29,7 @@ body.main-page {
     display: flex;
     min-height: 100vh;
     width: 100%;
+    position: relative;
 }
 
 /* ===================================================
@@ -45,7 +46,7 @@ body.main-page {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
     position: relative;
-    z-index: 90;
+    z-index: 9999; /* 🟢 บังคับให้อยู่ชั้นสูงสุดเสมอ จะได้ไม่โดนฉากหลังบังหรือเบลอ */
 }
 
 /* 🔘 ปุ่มลูกศรเปิด-ปิดลอยขอบ Sidebar */
@@ -64,7 +65,7 @@ body.main-page {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 101;
+    z-index: 10000;
     box-shadow: 0 0 10px rgba(189, 0, 255, 0.5);
     transition: all 0.3s ease;
 }
@@ -415,7 +416,7 @@ h2.page-title {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.9);
-    z-index: 9999;
+    z-index: 99999;
     justify-content: center;
     align-items: center;
     touch-action: none;
@@ -427,7 +428,7 @@ h2.page-title {
     right: 20px;
     display: flex;
     gap: 12px;
-    z-index: 10000;
+    z-index: 100000;
 }
 
 .modal-btn {
@@ -465,6 +466,9 @@ h2.page-title {
     position: relative;
 }
 
+/* ===================================================
+   🖼️ OVERLAY (แก้ไขปัญหารูปร่างและอาการเบลอ)
+   =================================================== */
 .sidebar-overlay {
     display: none;
     position: fixed;
@@ -472,9 +476,17 @@ h2.page-title {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    z-index: 89;
+    background: rgba(0, 0, 0, 0.5); /* 🟢 ตัดเอฟเฟกต์ blur ออก ป้องกันหน้าเบลอ */
+    z-index: 998; /* อยู่ใต้ Sidebar (9999) แต่อยู่เหนือเนื้อหาอื่นๆ */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.sidebar-overlay.active {
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
 }
 
 /* ===================================================
@@ -510,33 +522,55 @@ h2.page-title {
    =================================================== */
 @media (max-width: 768px) {
     .sidebar {
-        position: fixed;
-        top: 0;
-        left: -260px;
-        height: 100vh;
+        position: fixed !important;
+        top: 0 !important;
+        left: -280px !important; /* 🟢 ซ่อนไว้นอกหน้าจอฝั่งซ้าย */
+        width: 260px !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        z-index: 9999 !important;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    /* เมื่อเปิดใช้งาน Sidebar บนมือถือ */
+    .sidebar.mobile-open,
+    .sidebar.active {
+        left: 0 !important; /* 🟢 เลื่อนออกมาแสดงผล */
     }
 
     .sidebar .arrow-toggle-btn {
-        right: -35px;
-        top: 15px;
-        width: 35px;
-        height: 35px;
-    }
-
-    .sidebar.mobile-open {
-        left: 0;
-    }
-
-    .sidebar-overlay.active {
-        display: block;
+        right: -38px;
+        top: 20px;
+        width: 38px;
+        height: 38px;
+        font-size: 15px;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+        touch-action: manipulation;
     }
 
     .main-content {
         padding: 20px 15px;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    .filter-tabs-wrapper {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 5px;
+    }
+
+    .filter-tab-btn {
+        flex: 0 0 auto;
+        padding: 8px 16px;
     }
 
     .floating-add-btn {
         bottom: 1.5rem;
         right: 1.2rem;
+        z-index: 900;
     }
 }
