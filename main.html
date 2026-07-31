@@ -4,90 +4,128 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hello U - หน้าหลักสะสมผลงาน</title>
+    <!-- Favicon & Stylesheets -->
     <link rel="icon" type="image/png" href="https://cdn.phototourl.com/free/2026-07-02-bf2530e4-cb2e-459f-93de-d59034eb5c2c.png">
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="main-page">
 
-    <header class="header-bar">
-        <div class="user-meta">
-            <p id="userNameDisplay">ชื่อผู้ใช้: กำลังโหลด...</p>
-            <p id="portfolioCountDisplay">จำนวนผลงาน: 0 ชิ้น</p>
-        </div>
-        <div class="avatar-box">
-            <img id="userAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=HelloU" alt="User Avatar">
-        </div>
-    </header>
+    <!-- ⬛ ฉากหลังโปร่งแสงสำหรับมือถือ -->
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
 
-    <main class="main-content">
-        <h2 class="page-title">หน้าหลัก</h2>
+    <div class="dashboard-wrapper">
+        
+        <!-- 🧭 แท็บเมนูด้านข้าง (Sidebar Menu) -->
+        <aside id="sidebar" class="sidebar">
+            <button type="button" id="menuToggleBtn" class="arrow-toggle-btn" title="เปิด/ปิด เมนู" aria-label="Toggle Navigation">
+                <i id="toggleIcon" class="fa-solid fa-chevron-left"></i>
+            </button>
 
-        <!-- ➕ ปุ่มเพิ่มผลงานหลัก (จะถูกซ่อนอัตโนมัติเมื่อมีผลงาน >= 1 ชิ้น) -->
-        <button type="button" id="addPortfolioBtn" class="btn-add-portfolio">
-            <i class="fa-solid fa-square-plus"></i>
-            <span>เพิ่มผลงาน</span>
-        </button>
-
-        <div id="uploadOptionsBox" class="upload-options-box" style="display: none;">
-            <h3>เพิ่มผลงานเป็น</h3>
-            
-            <div class="option-item" data-type="file">
-                <div class="option-icon-wrapper">
-                    <i class="fa-solid fa-paperclip"></i>
+            <div>
+                <!-- โลโก้แบรนด์ (เปลี่ยนจากไอคอนโฟลเดอร์เป็นรูปภาพ) -->
+                <div class="sidebar-brand">
+                    <img src="https://cdn.phototourl.com/free/2026-07-02-bf2530e4-cb2e-459f-93de-d59034eb5c2c.png" alt="Hello U Logo" class="brand-icon" style="width: 32px; height: 32px; object-fit: contain;">
+                    <span class="brand-text">Hello U</span>
                 </div>
-                <span>ไฟล์</span>
+                
+                <!-- 📂 แท็บเมนูหลัก -->
+                <nav class="sidebar-menu">
+                    <a href="main.html" class="menu-item active">
+                        <i class="fa-solid fa-house"></i>
+                        <span class="menu-text">หน้าหลัก</span>
+                    </a>
+                    <a href="history.html" class="menu-item">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span class="menu-text">ประวัติผลงาน</span>
+                    </a>
+                </nav>
             </div>
 
-            <div class="option-item" data-type="link">
-                <div class="option-icon-wrapper">
-                    <i class="fa-solid fa-link"></i>
+            <!-- ส่วนข้อมูลผู้ใช้และปุ่มตั้งค่าด้านล่าง -->
+            <div class="sidebar-footer">
+                <div class="user-info-box">
+                    <div class="avatar-box">
+                        <img id="userAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=HelloU" alt="User Avatar">
+                    </div>
+                    <div class="user-meta">
+                        <p id="userNameDisplay">กำลังโหลด...</p>
+                        <p id="portfolioCountDisplay">จำนวนผลงาน: 0 ชิ้น</p>
+                    </div>
                 </div>
-                <span>ลิงก์</span>
+                
+                <button type="button" id="settingsBtn" class="settings-btn" title="ตั้งค่าโปรไฟล์">
+                    <i class="fa-solid fa-gear"></i>
+                    <span class="menu-text">ตั้งค่าโปรไฟล์</span>
+                </button>
             </div>
-        </div>
+        </aside>
 
-        <!-- 🔍 ส่วนค้นหาและตัวกรองผลงาน (Search & Filter Section) -->
-        <div id="filterSection" style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px; width: 100%;">
-            <!-- ช่องค้นหา -->
-            <div style="position: relative; width: 100%;">
-                <input type="text" id="searchPortfolioInput" placeholder="🔍 ค้นหาชื่อผลงาน..." style="width: 100%; padding: 12px 16px 12px 40px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: white; font-size: 15px; outline: none;">
-                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.5);"></i>
+        <!-- 📄 เนื้อหาหลักฝั่งขวา -->
+        <main class="main-content">
+            <h2 class="page-title">หน้าหลัก</h2>
+
+            <!-- ➕ ปุ่มเพิ่มผลงานหลัก -->
+            <button type="button" id="addPortfolioBtn" class="btn-add-portfolio">
+                <i class="fa-solid fa-square-plus"></i>
+                <span>เพิ่มผลงาน</span>
+            </button>
+
+            <!-- กล่องตัวเลือกประเภทการอัปโหลด -->
+            <div id="uploadOptionsBox" class="upload-options-box" style="display: none;">
+                <h3>เพิ่มผลงานเป็น</h3>
+                
+                <div class="option-item" data-type="file">
+                    <div class="option-icon-wrapper">
+                        <i class="fa-solid fa-paperclip"></i>
+                    </div>
+                    <span>ไฟล์</span>
+                </div>
+
+                <div class="option-item" data-type="link">
+                    <div class="option-icon-wrapper">
+                        <i class="fa-solid fa-link"></i>
+                    </div>
+                    <span>ลิงก์</span>
+                </div>
             </div>
-            
-            <!-- ปุ่มเลือกประเภทการดู -->
-            <div style="display: flex; gap: 8px; width: 100%;">
-                <button type="button" class="filter-tab-btn active" data-filter="all" style="flex: 1; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.2); color: white; font-weight: bold; cursor: pointer; font-size: 14px; transition: all 0.2s;">ทั้งหมด</button>
-                <button type="button" class="filter-tab-btn" data-filter="file" style="flex: 1; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); font-weight: bold; cursor: pointer; font-size: 14px; transition: all 0.2s;">ไฟล์</button>
-                <button type="button" class="filter-tab-btn" data-filter="link" style="flex: 1; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); font-weight: bold; cursor: pointer; font-size: 14px; transition: all 0.2s;">ลิงก์</button>
+
+            <!-- 🔍 ส่วนค้นหาและตัวกรองผลงาน -->
+            <div id="filterSection" class="filter-section">
+                <div class="search-box-wrapper">
+                    <input type="text" id="searchPortfolioInput" placeholder=" ค้นหาชื่อผลงาน..." class="search-input">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                </div>
+                
+                <div class="filter-tabs-wrapper">
+                    <button type="button" class="filter-tab-btn active" data-filter="all">ทั้งหมด</button>
+                    <button type="button" class="filter-tab-btn" data-filter="file">ไฟล์</button>
+                    <button type="button" class="filter-tab-btn" data-filter="link">ลิงก์</button>
+                </div>
             </div>
-        </div>
 
-        <div id="portfolioContainer" style="margin-top: 20px; display: flex; flex-direction: column; gap: 15px;"></div>
-    </main>
+            <div id="portfolioContainer" class="portfolio-container"></div>
+        </main>
+    </div>
 
-    <button type="button" id="settingsBtn" class="settings-btn" title="ตั้งค่า">
-        <i class="fa-solid fa-gear"></i>
-    </button>
-
-    <!-- ➕ ปุ่มบวกลอยตัว (จะถูกซ่อนอัตโนมัติเมื่อมีผลงาน >= 1 ชิ้น) -->
+    <!-- ➕ ปุ่มบวกลอยตัว -->
     <button type="button" id="floatingAddBtn" class="floating-add-btn" title="เพิ่มอย่างรวดเร็ว">
         <i class="fa-solid fa-plus"></i>
     </button>
 
-    <input type="file" id="fileInputHidden" style="display: none;" accept="image/*, application/pdf, .doc, .docx, .ppt, .pptx">
+    <input type="file" id="fileInputHidden" style="display: none;" accept="image/*, application/pdf">
     
-    <!-- กล่องพรีวิวผลงาน (Modal Overlay) -->
-    <div id="previewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; touch-action: none;">
-        <div style="position: absolute; top: 20px; right: 20px; display: flex; gap: 12px; z-index: 10000;">
-            <a id="modalDownloadBtn" href="#" download="" style="display: none; background: #3182ce; color: white; border-radius: 50%; width: 40px; height: 40px; text-decoration: none; font-size: 18px; align-items: center; justify-content: center; transition: 0.2s;" title="ดาวน์โหลดไฟล์นี้ลงเครื่อง">
+    <!-- Modal พรีวิวผลงาน -->
+    <div id="previewModal" class="preview-modal" style="display: none;">
+        <div class="modal-controls">
+            <a id="modalDownloadBtn" href="#" download="" class="modal-btn download-btn" title="ดาวน์โหลดไฟล์นี้ลงเครื่อง">
                 <i class="fa-solid fa-download"></i>
             </a>
-            <button id="closeModalBtn" style="background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center;" title="ปิดหน้าต่าง">
+            <button id="closeModalBtn" class="modal-btn close-btn" title="ปิดหน้าต่าง">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <div id="modalContentArea" style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;"></div>
+        <div id="modalContentArea" class="modal-content-area"></div>
     </div>
 
     <script type="module" src="main.js"></script>
