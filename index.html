@@ -5,21 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello U - เว็บไซต์เก็บสะสมผลงาน</title>
     
-    <!-- 🌟 โค้ดสำหรับแสดงโลโก้บนแท็บเบราว์เซอร์ (Favicon) -->
+    <!-- 🌟 Favicon -->
     <link rel="icon" type="image/png" href="https://cdn.phototourl.com/free/2026-07-02-bf2530e4-cb2e-459f-93de-d59034eb5c2c.png">
 
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="login-page">
 
     <div class="container theme-blue">
+        <!-- 🔔 กล่องแสดงข้อความแจ้งเตือนสถานะการอนุมัติ (ค้างไว้บนสุดเสมอ) -->
+        <div id="statusAlertBox" style="display: none; padding: 14px 16px; border-radius: 12px; font-size: 0.9rem; margin-bottom: 20px; text-align: left; line-height: 1.5; font-weight: 500; position: relative;"></div>
+
         <div class="logo-container">
             <img src="https://cdn.phototourl.com/free/2026-07-02-bf2530e4-cb2e-459f-93de-d59034eb5c2c.png" class="logo-image" alt="Hello U Logo">
         </div>
 
         <h1>เข้าสู่ระบบ</h1>
         <p>ยินดีต้อนรับกลับมา! กรุณากรอกข้อมูลเพื่อเข้าใช้งาน</p>
-        
+
         <form id="loginForm">
             <input type="email" id="loginEmail" placeholder="พิมพ์อีเมลของคุณ..." required>
             <input type="password" id="loginPassword" placeholder="พิมพ์รหัสผ่าน..." required>
