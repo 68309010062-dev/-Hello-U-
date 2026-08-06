@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello U - แบบสอบถามข้อมูลเพิ่มเติม</title>
+    <link rel="icon" type="image/png" href="https://cdn.phototourl.com/free/2026-07-02-bf2530e4-cb2e-459f-93de-d59034eb5c2c.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="login-page"> 
+    <div class="container" style="max-width: 440px; text-align: left;">
+        
+        <!-- Header & Progress Bar -->
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div class="logo">Hello U</div>
+            <h2 style="font-size: 1.3rem; margin-top: 0.5rem; color: #102a43;">ยินดีต้อนรับสมาชิกใหม่! 🎉</h2>
+            
+            <!-- แถบ Progress Bar -->
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <span class="step-indicator" id="stepIndicator">คำถาม 1 จาก 5</span>
+        </div>
+
+        <form id="questionnaireForm">
+            
+            <!-- Step 1: ชื่อ-นามสกุล -->
+            <div class="question-step active" data-step="1">
+                <div class="form-group-custom">
+                    <label for="userFullName"><i class="fa-solid fa-user"></i> ชื่อ - นามสกุล ของคุณคืออะไร?</label>
+                    <input type="text" id="userFullName" placeholder="ระบุชื่อ - นามสกุล..." required>
+                </div>
+            </div>
+
+            <!-- Step 2: วัน/เดือน/ปีเกิด (ใช้ ค.ศ. คุม min/max ไม่ให้พิมพ์เกิน 4 หลัก) -->
+            <div class="question-step" data-step="2">
+                <div class="form-group-custom">
+                    <label for="birthDate"><i class="fa-solid fa-cake-candles"></i> วัน/เดือน/ปีเกิดของคุณ:</label>
+                    <input type="date" id="birthDate" min="1900-01-01" max="2026-12-31">
+                </div>
+            </div>
+
+            <!-- Step 3: เพศ -->
+            <div class="question-step" data-step="3">
+                <div class="form-group-custom">
+                    <label><i class="fa-solid fa-venus-mars"></i> เลือกระบุเพศของคุณ:</label>
+                    <div class="option-group">
+                        <label class="radio-card"><input type="radio" name="gender" value="ชาย"> 👨 ชาย</label>
+                        <label class="radio-card"><input type="radio" name="gender" value="หญิง"> 👩 หญิง</label>
+                        <label class="radio-card"><input type="radio" name="gender" value="LGBTQ+"> 🌈 LGBTQ+</label>
+                        <label class="radio-card"><input type="radio" name="gender" value="ไม่ระบุ"> 🤐 ไม่ระบุ</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: วุฒิการศึกษา -->
+            <div class="question-step" data-step="4">
+                <div class="form-group-custom">
+                    <label for="education"><i class="fa-solid fa-graduation-cap"></i> วุฒิการศึกษาสูงสุด:</label>
+                    <select id="education">
+                        <option value="" disabled selected>-- กดเลือกวุฒิการศึกษา --</option>
+                        <option value="มัธยมศึกษาตอนต้นหรือต่ำกว่า">มัธยมศึกษาตอนต้นหรือต่ำกว่า</option>
+                        <option value="มัธยมศึกษาตอนปลาย / ปวช.">มัธยมศึกษาตอนปลาย / ปวช.</option>
+                        <option value="อนุปริญญา / ปวส.">อนุปริญญา / ปวส.</option>
+                        <option value="ปริญญาตรี">ปริญญาตรี</option>
+                        <option value="ปริญญาโท">ปริญญาโท</option>
+                        <option value="ปริญญาเอก">ปริญญาเอก</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Step 5: สาเหตุที่ใช้งาน -->
+            <div class="question-step" data-step="5">
+                <div class="form-group-custom">
+                    <label><i class="fa-solid fa-lightbulb"></i> จุดประสงค์หลักในการใช้งานแอปนี้:</label>
+                    <div class="option-group-vertical">
+                        <label class="radio-card-full"><input type="radio" name="reason" value="เก็บสะสมผลงานส่วนตัว"> 📁 เก็บสะสมผลงานส่วนตัว</label>
+                        <label class="radio-card-full"><input type="radio" name="reason" value="ใช้สำหรับยื่นสมัครงาน/สมัครเรียน"> 💼 ใช้สำหรับยื่นสมัครงาน / สมัครเรียน</label>
+                        <label class="radio-card-full"><input type="radio" name="reason" value="ต้องการแชร์ผลงานให้ผู้อื่นดู"> 🌐 ต้องการแชร์ผลงานให้ผู้อื่นดู</label>
+                        <label class="radio-card-full"><input type="radio" name="reason" value="ทดลองใช้งานตามเพื่อนแนะนำ"> 👥 ทดลองใช้งานตามเพื่อนแนะนำ</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ปุ่ม Navigation ควบคุมการเปลี่ยนหน้า -->
+            <div class="btn-step-group">
+                <button type="button" id="prevBtn" class="btn btn-secondary" style="display: none;">⬅️ ย้อนกลับ</button>
+                <button type="button" id="nextBtn" class="btn">ถัดไป ➡️</button>
+                <button type="submit" id="submitBtn" class="btn" style="display: none; background-color: #27ab83;">🚀 บันทึกและเข้าสู่ระบบ</button>
+            </div>
+
+        </form>
+    </div>
+
+    <script type="module" src="questionnaire.js"></script>
+</body>
+</html>
