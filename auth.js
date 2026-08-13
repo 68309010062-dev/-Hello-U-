@@ -19,24 +19,20 @@ import {
 
 console.log("🚀 ระบบยืนยันตัวตน (Auth Module) เริ่มทำงาน");
 
-// 🔑 รหัสผ่านลับสำหรับอนุมัติสมัครแอดมิน
-const ADMIN_SECRET_CODE = "ADMIN1234"; 
-const MAX_ATTEMPTS = 3; 
-
 // -------------------------------------------------------------
 // 0. ฟังก์ชันช่วยเหลือและแปลภาษา (Helper & Translation Functions)
 // -------------------------------------------------------------
 
 /**
  * 💡 ฟังก์ชันแปลงสถานะเป็นภาษาไทยสำหรับนำไปแสดงบนหน้า UI
- * @param {string} status - สถานะที่ดึงมาจาก Firestore
- * @returns {string} - สถานะภาษาไทยพร้อมไอคอน
  */
 export function translateStatus(status) {
     if (!status) return 'ไม่ระบุ';
     const s = status.toLowerCase();
     
     switch (s) {
+        case 'pending':
+        case 'รออนุมัติ':
         case 'รอการอนุมัติ':
             return '⏳ รอการอนุมัติ';
         case 'approved':
@@ -80,19 +76,6 @@ async function isEmailBlocked(email) {
     } catch (error) {
         console.warn("⚠️ ไม่สามารถตรวจสอบสถานะการถูกระงับได้:", error.message);
         return false;
-    }
-}
-
-async function addEmailToBlockedCollection(email, reason = "กรอกรหัสอนุมัติแอดมินผิดเกิน 3 ครั้ง") {
-    try {
-        await setDoc(doc(db, "blocked_users", email.toLowerCase()), {
-            email: email.toLowerCase(),
-            reason: reason,
-            blockedAt: serverTimestamp()
-        });
-        console.log(`❌ ระงับการใช้งานอีเมล ${email} เรียบร้อยแล้ว`);
-    } catch (error) {
-        console.error("เกิดข้อผิดพลาดในการบันทึกรายชื่อผู้ถูกระงับ:", error);
     }
 }
 
@@ -142,7 +125,6 @@ export async function deleteCurrentUserAccount() {
     } catch (error) {
         console.error("❌ เกิดข้อผิดพลาดในการลบบัญชี:", error);
         
-        // หากระบบแจ้งว่าการล็อกอินเก่านานเกินไป ต้องให้ผู้ใช้ Re-authenticate ใหม่
         if (error.code === 'auth/requires-recent-login') {
             alert("⚠️ เพื่อความปลอดภัย กรุณาเข้าสู่ระบบใหม่อีกครั้งก่อนทำการลบบัญชี");
             await auth.signOut();
@@ -175,10 +157,8 @@ async function redirectAfterLogin(user) {
             if (currentStatus === "rejected" || currentStatus === "ไม่อนุมัติ" || currentStatus === "ปฏิเสธ") {
                 alert("❌ คำขอสิทธิ์ผู้ดูแลระบบของคุณไม่ได้รับการอนุมัติ ระบบจะลบข้อมูลบัญชีนี้โดยอัตโนมัติ");
                 
-                // ลบ Document ออกจาก Firestore
                 await deleteAdminData(adminDoc.id);
                 
-                // ลบ Auth บัญชีนี้ออกจากระบบ
                 try {
                     await deleteUser(user);
                 } catch (e) {
@@ -274,14 +254,12 @@ function showAdminPendingModal(username) {
 
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    // ปิดเมื่อกดปุ่ม
     document.getElementById('closePendingBtn')?.addEventListener('click', () => {
         const modal = document.getElementById('pendingAdminModal');
         if (modal) modal.remove();
         window.location.href = 'index.html';
     });
 
-    // ปิดเมื่อคลิกพื้นหลัง (Backdrop Click)
     const modalElement = document.getElementById('pendingAdminModal');
     modalElement?.addEventListener('click', (e) => {
         if (e.target === modalElement) {
@@ -292,25 +270,17 @@ function showAdminPendingModal(username) {
 }
 
 // -------------------------------------------------------------
-// 1. ซ่อน/แสดง & ตรวจสอบ Role (ทำใน Register Page)
+// 1. ซ่อน/แสดง ตรวจสอบ Role (ทำใน Register Page)
 // -------------------------------------------------------------
 const regRoleSelect = document.getElementById('regRole');
 const adminKeyGroup = document.getElementById('adminKeyGroup');
 
 if (regRoleSelect && adminKeyGroup) {
     regRoleSelect.addEventListener('change', (e) => {
-        const adminSecretInput = document.getElementById('adminSecretKey');
-        const adminKeyError = document.getElementById('adminKeyError');
-
         if (e.target.value === 'admin') {
             adminKeyGroup.style.display = 'block';
         } else {
             adminKeyGroup.style.display = 'none';
-            if (adminKeyError) adminKeyError.style.display = 'none';
-            if (adminSecretInput) {
-                adminSecretInput.style.borderColor = '#bcccdc';
-                adminSecretInput.disabled = false;
-            }
         }
     });
 }
@@ -362,10 +332,7 @@ if (registerForm) {
         const regEmailEl = document.getElementById('regEmail');
         const regPasswordEl = document.getElementById('regPassword');
         const regPasswordConfirmEl = document.getElementById('regPasswordConfirm');
-        const adminSecretInput = document.getElementById('adminSecretKey');
         const adminOfficerIdInput = document.getElementById('adminOfficerId');
-        const adminKeyError = document.getElementById('adminKeyError');
-        const adminKeyErrorText = document.getElementById('adminKeyErrorText');
 
         if (!regNameEl || !regEmailEl || !regPasswordEl || !regPasswordConfirmEl) {
             alert("❌ โครงสร้างฟอร์มไม่สมบูรณ์ ตรวจสอบ id ใน HTML");
@@ -378,7 +345,6 @@ if (registerForm) {
         const passwordConfirm = regPasswordConfirmEl.value;
         
         const role = regRoleSelect?.value || 'user';
-        const adminKeyInput = adminSecretInput?.value?.trim() || '';
         const officerIdInput = adminOfficerIdInput?.value?.trim() || '';
 
         if (!email) {
@@ -396,51 +362,15 @@ if (registerForm) {
             return;
         }
 
+        if (role === 'admin' && !officerIdInput) {
+            alert("❌ กรุณากรอกรหัสเจ้าหน้าที่");
+            if (adminOfficerIdInput) adminOfficerIdInput.focus();
+            return;
+        }
+
         if (submitRegBtn) {
             submitRegBtn.disabled = true;
             submitRegBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> กำลังบันทึกข้อมูล...`;
-        }
-
-        if (role === 'admin') {
-            if (!officerIdInput) {
-                alert("❌ กรุณากรอกรหัสเจ้าหน้าที่");
-                if (adminOfficerIdInput) adminOfficerIdInput.focus();
-                resetSubmitButton(submitRegBtn);
-                return;
-            }
-
-            if (adminKeyInput !== ADMIN_SECRET_CODE) {
-                let attempts = parseInt(localStorage.getItem(`attempts_${email}`) || '0') + 1;
-                localStorage.setItem(`attempts_${email}`, attempts.toString());
-
-                if (attempts >= MAX_ATTEMPTS) {
-                    await addEmailToBlockedCollection(email);
-                    localStorage.removeItem(`attempts_${email}`);
-
-                    if (adminKeyError && adminKeyErrorText) {
-                        adminKeyError.style.display = 'block';
-                        adminKeyErrorText.innerText = "❌ ระบุรหัสอนุมัติผิดเกิน 3 ครั้ง! อีเมลนี้ถูกระงับการใช้งานในระบบแล้ว";
-                    }
-                    if (adminSecretInput) {
-                        adminSecretInput.style.borderColor = '#e53e3e';
-                        adminSecretInput.disabled = true;
-                    }
-                } else {
-                    const remaining = MAX_ATTEMPTS - attempts;
-                    if (adminKeyError && adminKeyErrorText) {
-                        adminKeyError.style.display = 'block';
-                        adminKeyErrorText.innerText = `รหัสอนุมัติแอดมินไม่ถูกต้อง! สามารถลองได้อีก ${remaining} ครั้ง`;
-                    }
-                    if (adminSecretInput) {
-                        adminSecretInput.style.borderColor = '#e53e3e';
-                        adminSecretInput.focus();
-                    }
-                }
-                resetSubmitButton(submitRegBtn);
-                return;
-            } else {
-                localStorage.removeItem(`attempts_${email}`);
-            }
         }
 
         try {
@@ -521,7 +451,7 @@ if (googleLoginBtn) {
 }
 
 // -------------------------------------------------------------
-// 5. ปุ่มร้องขอลบบัญชีด้วยตนเอง (สำหรับผูกกับปุ่มบน UI ถ้ามี)
+// 5. ปุ่มร้องขอลบบัญชีด้วยตนเอง
 // -------------------------------------------------------------
 const deleteAccountBtn = document.getElementById('deleteAccountBtn');
 if (deleteAccountBtn) {
