@@ -29,18 +29,9 @@
                 </select>
             </div>
 
-            <!-- 🔒 รหัสอนุมัติและรหัสเจ้าหน้าที่สำหรับแอดมิน -->
+            <!-- 🪪 รหัสเจ้าหน้าที่สำหรับแอดมิน -->
             <div id="adminKeyGroup" style="display: none; margin-top: 10px;">
-                <!-- 🪪 ช่องกรอกรหัสเจ้าหน้าที่ -->
                 <input type="text" id="adminOfficerId" placeholder="🪪 ใส่รหัสเจ้าหน้าที่ (Officer ID)...">
-
-                <!-- 🔑 ช่องกรอก Admin Key -->
-                <input type="password" id="adminSecretKey" placeholder="🔑 ใส่รหัสผ่านอนุมัติแอดมิน (Admin Key)...">
-
-                <!-- ⚠️ ข้อความแจ้งเตือนสีแดงเมื่อรหัสผิดหรือถูกระงับ -->
-                <p id="adminKeyError" style="display: none; color: #e53e3e; font-size: 0.85rem; text-align: left; margin-top: -0.4rem; margin-bottom: 0.8rem; font-weight: bold; line-height: 1.4;">
-                    <i class="fa-solid fa-circle-exclamation"></i> <span id="adminKeyErrorText">รหัสอนุมัติแอดมินไม่ถูกต้อง!</span>
-                </p>
             </div>
 
             <button type="submit" id="submitRegBtn" class="btn">📝 บันทึกข้อมูลลงทะเบียน</button>
