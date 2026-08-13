@@ -98,12 +98,18 @@ document.addEventListener("DOMContentLoaded", () => {
             .replace(/'/g, "&#039;");
     }
 
-    // Helper: Safe URL Validator (ป้องกัน JavaScript Injection)
+    // Helper: Safe URL Validator
     function sanitizeUrl(url) {
         if (!url) return "#";
         const trimmed = String(url).trim();
-        if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:image/")) {
-            return escapeHtml(trimmed);
+        if (
+            trimmed.startsWith("http://") || 
+            trimmed.startsWith("https://") || 
+            trimmed.startsWith("data:image/") ||
+            trimmed.startsWith("data:application/pdf") ||
+            trimmed.startsWith("data:application/")
+        ) {
+            return trimmed;
         }
         return "#";
     }
@@ -226,8 +232,49 @@ document.addEventListener("DOMContentLoaded", () => {
             card.style.border = isWhite ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.1)";
         });
 
-        if (closeModalBtn) addButtonHoverEffect(closeModalBtn, "transparent", "rgba(255,255,255,0.1)");
-        if (modalDownloadBtn) addButtonHoverEffect(modalDownloadBtn, "#4a5568", "#2d3748");
+        // ปรับแต่งปุ่มปิด Modal (X) ให้เป็นสีแดงสดเด่นชัดตั้งแต่วินาทีแรก
+        if (closeModalBtn) {
+            closeModalBtn.style.position = "fixed";
+            closeModalBtn.style.top = "20px";
+            closeModalBtn.style.right = "20px";
+            closeModalBtn.style.color = "#ffffff";
+            closeModalBtn.style.backgroundColor = "#e53e3e";
+            closeModalBtn.style.borderRadius = "50%";
+            closeModalBtn.style.width = "44px";
+            closeModalBtn.style.height = "44px";
+            closeModalBtn.style.display = "flex";
+            closeModalBtn.style.alignItems = "center";
+            closeModalBtn.style.justifyContent = "center";
+            closeModalBtn.style.fontSize = "20px";
+            closeModalBtn.style.cursor = "pointer";
+            closeModalBtn.style.border = "2px solid #ffffff";
+            closeModalBtn.style.boxShadow = "0 4px 12px rgba(0,0,0,0.5)";
+            closeModalBtn.style.zIndex = "999999";
+            
+            closeModalBtn.onmouseenter = () => closeModalBtn.style.backgroundColor = "#c53030";
+            closeModalBtn.onmouseleave = () => closeModalBtn.style.backgroundColor = "#e53e3e";
+        }
+
+        if (modalDownloadBtn) {
+            modalDownloadBtn.style.position = "fixed";
+            modalDownloadBtn.style.top = "20px";
+            modalDownloadBtn.style.right = "75px";
+            modalDownloadBtn.style.color = "#ffffff";
+            modalDownloadBtn.style.backgroundColor = "#4a5568";
+            modalDownloadBtn.style.borderRadius = "50%";
+            modalDownloadBtn.style.width = "44px";
+            modalDownloadBtn.style.height = "44px";
+            modalDownloadBtn.style.display = "flex";
+            modalDownloadBtn.style.alignItems = "center";
+            modalDownloadBtn.style.justifyContent = "center";
+            modalDownloadBtn.style.fontSize = "18px";
+            modalDownloadBtn.style.border = "2px solid #ffffff";
+            modalDownloadBtn.style.boxShadow = "0 4px 12px rgba(0,0,0,0.5)";
+            modalDownloadBtn.style.zIndex = "999999";
+
+            modalDownloadBtn.onmouseenter = () => modalDownloadBtn.style.backgroundColor = "#2d3748";
+            modalDownloadBtn.onmouseleave = () => modalDownloadBtn.style.backgroundColor = "#4a5568";
+        }
     }
 
     window.addEventListener('storage', (e) => {
@@ -340,7 +387,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (data.type === "file") {
                 const isImgFile = data.content && data.content.startsWith("data:image/");
                 typeIcon = isImgFile 
-                    ? `<img src="${safeContent}" style="width: 42px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2)"/>`
+                    ? `<img src="${safeContent}" style="width: 42px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: #ffffff;"/>`
                     : `<i class="fa-solid fa-file-pdf" style="font-size: 28px; color: #fc8181;"></i>`;
                 actionButton = `<button class="view-file-btn" data-id="${docId}" style="background: #4a5568; color: white; padding: 6px 12px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; margin-right: 8px; cursor: pointer;"><i class="fa-solid fa-eye"></i> ตรวจสอบไฟล์</button>`;
             } else {
@@ -376,7 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".view-link-btn").forEach(btn => addButtonHoverEffect(btn, "#2b6cb0", "#1d4ed8"));
     }
 
-    // --- Event Delegation สำหรับจัดการคลิกดูไฟล์ / ลบผลงาน (ป้องกัน Memory Leaks) ---
+    // --- Event Delegation สำหรับจัดการคลิกดูไฟล์ / ลบผลงาน ---
     if (portfolioContainer) {
         portfolioContainer.addEventListener("click", async (e) => {
             const viewBtn = e.target.closest(".view-file-btn");
@@ -389,22 +436,34 @@ document.addEventListener("DOMContentLoaded", () => {
                     modalContentArea.innerHTML = "";
                     scale = 1; pointX = 0; pointY = 0; evCache = []; prevDiff = -1;
 
+                    const safeUrl = sanitizeUrl(targetData.content);
+
                     if (modalDownloadBtn) {
-                        modalDownloadBtn.href = targetData.content;
+                        modalDownloadBtn.href = safeUrl;
                         modalDownloadBtn.setAttribute("download", targetData.title || "portfolio-file");
                         modalDownloadBtn.style.display = "flex"; 
                     }
 
-                    const isImage = targetData.content && targetData.content.startsWith("data:image/");
+                    const isImage = targetData.content && (
+                        targetData.content.startsWith("data:image/") || 
+                        /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(targetData.content)
+                    );
 
                     if (isImage) {
-                        modalContentArea.innerHTML = `<img id="zoomable-img" src="${sanitizeUrl(targetData.content)}" style="max-width: 100%; max-height: 100%; object-fit: contain; transform: translate(0px, 0px) scale(1); transform-origin: center; cursor: grab; user-select: none; transition: transform 0.1s ease-out;" draggable="false" />`;
+                        modalContentArea.innerHTML = `
+                            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #ffffff; border-radius: 12px; padding: 16px; box-sizing: border-box; overflow: hidden;">
+                                <img id="zoomable-img" src="${safeUrl}" style="max-width: 100%; max-height: 100%; object-fit: contain; transform: translate(0px, 0px) scale(1); transform-origin: center; cursor: grab; user-select: none; transition: transform 0.1s ease-out;" draggable="false" />
+                            </div>
+                        `;
                         initZoomAndPan();
                     } else {
-                        modalContentArea.innerHTML = `<object data="${sanitizeUrl(targetData.content)}" type="application/pdf" width="100%" height="100%" style="border-radius: 8px;"><p>ไม่สามารถแสดงพรีวิวได้ <a href="${sanitizeUrl(targetData.content)}" download="${escapeHtml(targetData.title)}">ดาวน์โหลดไฟล์ที่นี่</a></p></object>`;
+                        modalContentArea.innerHTML = `
+                            <iframe src="${safeUrl}" width="100%" height="100%" style="border: none; border-radius: 8px; background: #ffffff;"></iframe>
+                        `;
                     }
                     
                     previewModal.style.display = "flex";
+                    previewModal.classList.add("active");
                 }
             }
 
@@ -497,6 +556,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (previewModal && closeModalBtn) {
         const closePreview = () => {
             previewModal.style.display = "none";
+            previewModal.classList.remove("active");
             if (modalContentArea) modalContentArea.innerHTML = "";
             if (modalDownloadBtn) { modalDownloadBtn.style.display = "none"; modalDownloadBtn.href = "#"; }
         };
@@ -574,7 +634,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const file = event.target.files[0];
             if (!file || !currentUserId) return;
 
-            // Limit file size to 700 KB (Firestore Document limit is 1MB)
             if (file.size > 700 * 1024) { 
                 alert("❌ ขนาดไฟล์ต้องไม่เกิน 700 KB ครับ แนะนำให้ย่อขนาดรูปภาพหรือลดขนาด PDF ก่อนอัปโหลดนะครับ");
                 fileInputHidden.value = "";
