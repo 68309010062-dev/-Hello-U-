@@ -1,5 +1,5 @@
 import { onAuthStateChanged, deleteUser, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js"; 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -44,18 +44,16 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 🎨 ฟังก์ชันปรับธีมสีของหน้าเว็บ (แก้ไขเรื่องปุ่มกลืนไปกับพื้นหลังสีขาว)
+    // 🎨 ฟังก์ชันปรับธีมสีของหน้าเว็บ
     function applyThemeStyles(color) {
         document.body.style.background = color;
         const topBar = document.querySelector(".top-bar");
         const inputs = document.querySelectorAll(".input-group input");
         
-        // 1. ดึงกลุ่มตัวหนังสือ/ไอคอนทั้งหมดในโซนอัปโหลด
         const uploadElements = document.querySelectorAll(
             ".upload-section, .upload-section *, .input-group label, .file-input-label, .file-input-label *, [for='editAvatarFile'], [for='editAvatarFile'] *"
         );
         
-        // 2. ดึงเฉพาะ "ตัวปุ่ม" หรือ "กล่องดีไซน์" ของปุ่มเลือกรูปภาพ (มักจะเป็น Label หรือ Div คลาสเหล่านี้)
         const uploadButtons = document.querySelectorAll(".file-input-label, [for='editAvatarFile'], .upload-btn");
 
         if (color === "#ffffff") {
@@ -76,21 +74,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 input.style.borderColor = "#cbd5e0";
             });
 
-            // เปลี่ยนสีตัวอักษรในโซนอัปโหลดให้เป็นสีเข้ม
             uploadElements.forEach(el => {
                 el.style.color = "#1a202c";
             });
             if (editAvatarFile) editAvatarFile.style.color = "#1a202c";
 
-            // ✨ ไฮไลท์: สั่งปรับพื้นหลังและกรอบของปุ่มเลือกรูปภาพเมื่ออยู่บนหน้าจอขาว
             uploadButtons.forEach(btn => {
-                btn.style.background = "#f7fafc";            // พื้นหลังปุ่มออกเทาอ่อนๆ
-                btn.style.borderColor = "#cbd5e0";           // เส้นขอบปุ่มสีเทาชัดเจน
-                btn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.05)"; // เติมเงาละมุนๆ ให้ปุ่มลอยขึ้นมา
+                btn.style.background = "#f7fafc";
+                btn.style.borderColor = "#cbd5e0";
+                btn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.05)";
             });
 
         } else {
-            // สำหรับธีมมืด หรือธีมไล่สี (Gradient)
             document.body.style.color = "white";
             if (userNameDisplay) userNameDisplay.style.color = "white";
             if (portfolioCountDisplay) portfolioCountDisplay.style.color = "white";
@@ -108,15 +103,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 input.style.borderColor = "#4a5568";
             });
 
-            // คืนค่าตัวอักษรเป็นสีขาว
             uploadElements.forEach(el => {
                 el.style.color = "white";
             });
             if (editAvatarFile) editAvatarFile.style.color = "white";
 
-            // ✨ คืนค่าปุ่มเลือกรูปภาพให้เข้ากับธีมมืด
             uploadButtons.forEach(btn => {
-                btn.style.background = "rgba(255, 255, 255, 0.1)"; // พื้นหลังโปร่งแสงขาวสว่างขุ่นๆ
+                btn.style.background = "rgba(255, 255, 255, 0.1)";
                 btn.style.borderColor = "rgba(255, 255, 255, 0.2)";
                 btn.style.boxShadow = "none";
             });
@@ -170,7 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // ✂️ ฟังก์ชันย่อขนาดรูปภาพแบบพอดีคำ (150x150 px กำลังสวย)
+    // ✂️ ฟังก์ชันย่อขนาดรูปภาพ
     function compressImage(file, maxWidth, maxHeight, callback) {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -205,7 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // 📸 ตรวจจับการเลือกไฟล์รูปภาพจากเครื่อง
+    // 📸 ตรวจจับการเลือกไฟล์รูปภาพ
     if (editAvatarFile) {
         editAvatarFile.addEventListener("change", (e) => {
             const file = e.target.files[0];
@@ -324,6 +317,8 @@ document.addEventListener("DOMContentLoaded", () => {
             deleteModal.style.display = "none";
         });
     }
+
+    // 🔥 ส่วนสำคัญที่แก้ไข: ลบข้อมูลผลงานทั้งหมด + ข้อมูลผู้ใช้ + บัญชีผู้ใช้
     if (finalDeleteBtn && deleteConfirmInput && deleteModal) {
         finalDeleteBtn.addEventListener("click", async () => {
             if (!currentUser) return;
@@ -335,16 +330,46 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const finalConfirm = confirm("ยืนยันครั้งสุดท้ายจริง ๆ นะครับ? ระบบจะลบข้อมูลของคุณทั้งหมดทันที");
+            const finalConfirm = confirm("ยืนยันครั้งสุดท้ายจริง ๆ นะครับ? ระบบจะลบข้อมูลและผลงานของคุณทั้งหมดทันที");
             if (finalConfirm) {
                 try {
+                    finalDeleteBtn.disabled = true;
+                    finalDeleteBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> กำลังลบข้อมูล...`;
+
+                    // 1. ค้นหาและลบผลงานทั้งหมดของผู้ใช้นี้ออกจากคอลเลกชัน "portfolios"
+                    const portfolioRef = collection(db, "portfolios");
+                    const q = query(portfolioRef, where("userId", "==", currentUser.uid));
+                    const querySnapshot = await getDocs(q);
+
+                    if (!querySnapshot.empty) {
+                        const batch = writeBatch(db);
+                        querySnapshot.forEach((docSnap) => {
+                            batch.delete(docSnap.ref);
+                        });
+                        await batch.commit();
+                        console.log(`🗑️ ลบผลงานจำนวน ${querySnapshot.size} ชิ้น เรียบร้อยแล้ว`);
+                    }
+
+                    // 2. ลบเอกสารข้อมูลส่วนตัวในคอลเลกชัน "users"
                     await deleteDoc(doc(db, "users", currentUser.uid));
+
+                    // 3. ลบบัญชีออกจาก Firebase Auth
                     await deleteUser(currentUser);
-                    alert("ลบบัญชีผู้ใช้ของคุณสำเร็จแล้ว");
+
+                    alert("🎉 ลบบัญชีผู้ใช้และผลงานทั้งหมดของคุณเรียบร้อยแล้ว");
                     window.location.href = "index.html";
+
                 } catch (error) {
-                    console.error(error);
-                    alert("เพื่อความปลอดภัยขั้นสูง กรุณาลงชื่อออกแล้วเข้าสู่ระบบใหม่อีกครั้ง ก่อนทำการลบบัญชีนะครับพี่");
+                    console.error("❌ Delete Account Error:", error);
+                    
+                    if (error.code === 'auth/requires-recent-login') {
+                        alert("⚠️ เพื่อความปลอดภัยสูง กรุณาลงชื่อออกแล้วเข้าสู่ระบบใหม่อีกครั้ง ก่อนทำการลบบัญชีครับ");
+                    } else {
+                        alert("❌ เกิดข้อผิดพลาดในการลบบัญชี: " + error.message);
+                    }
+                } finally {
+                    finalDeleteBtn.disabled = false;
+                    finalDeleteBtn.innerHTML = `ยืนยันลบบัญชี`;
                     deleteModal.style.display = "none";
                 }
             }
