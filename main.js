@@ -39,38 +39,35 @@ document.addEventListener("DOMContentLoaded", () => {
     let scale = 1, pointX = 0, pointY = 0, startX = 0, startY = 0;
     let isPanning = false, evCache = [], prevDiff = -1;
 
-    // --- Sidebar Toggle Logic (รุ่นแก้ไขบังคับปิดได้ 100%) ---
-function openSidebar() {
-    if (sidebar) {
-        sidebar.classList.add("mobile-open");
-        sidebar.classList.add("active");
-        sidebar.classList.remove("collapsed");
+    // --- Sidebar Toggle Logic ---
+    function openSidebar() {
+        if (sidebar) {
+            sidebar.classList.add("mobile-open", "active");
+            sidebar.classList.remove("collapsed");
+        }
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.add("active");
+            sidebarOverlay.style.display = "block";
+        }
     }
-    if (sidebarOverlay) {
-        sidebarOverlay.classList.add("active");
-        sidebarOverlay.style.display = "block";
-    }
-}
 
-function closeSidebar() {
-    if (sidebar) {
-        sidebar.classList.remove("mobile-open");
-        sidebar.classList.remove("active");
-        sidebar.classList.add("collapsed");
+    function closeSidebar() {
+        if (sidebar) {
+            sidebar.classList.remove("mobile-open", "active");
+            sidebar.classList.add("collapsed");
+        }
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.remove("active");
+            sidebarOverlay.style.display = "none";
+        }
+        if (toggleIcon) {
+            toggleIcon.className = "fa-solid fa-chevron-right";
+        }
     }
-    if (sidebarOverlay) {
-        sidebarOverlay.classList.remove("active");
-        sidebarOverlay.style.display = "none";
-    }
-    if (toggleIcon) {
-        toggleIcon.className = "fa-solid fa-chevron-right";
-    }
-}
 
-// 🟢 เพิ่มบรรทัดนี้: บังคับเรียก closeSidebar() ทันทีที่โหลดสคริปต์
-closeSidebar();
+    // บังคับปิด Sidebar ทันทีที่โหลด
+    closeSidebar();
 
-    // เมื่อกดปุ่มเมนู
     if (menuToggleBtn) {
         menuToggleBtn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -82,7 +79,6 @@ closeSidebar();
         });
     }
 
-    // เมื่อคลิกที่พื้นหลังดำ (Overlay) บนมือถือ -> บังคับปิดทันที
     if (sidebarOverlay) {
         sidebarOverlay.addEventListener("click", (e) => {
             e.preventDefault();
@@ -100,6 +96,16 @@ closeSidebar();
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
+    }
+
+    // Helper: Safe URL Validator (ป้องกัน JavaScript Injection)
+    function sanitizeUrl(url) {
+        if (!url) return "#";
+        const trimmed = String(url).trim();
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:image/")) {
+            return escapeHtml(trimmed);
+        }
+        return "#";
     }
 
     // --- Format Date to Thai ---
@@ -329,7 +335,7 @@ closeSidebar();
             let typeIcon = "";
 
             const safeTitle = escapeHtml(data.title);
-            const safeContent = escapeHtml(data.content);
+            const safeContent = sanitizeUrl(data.content);
 
             if (data.type === "file") {
                 const isImgFile = data.content && data.content.startsWith("data:image/");
@@ -365,12 +371,19 @@ closeSidebar();
             portfolioContainer.appendChild(card);
         });
 
+        // Hover Effect
         document.querySelectorAll(".view-file-btn").forEach(btn => addButtonHoverEffect(btn, "#4a5568", "#2d3748"));
         document.querySelectorAll(".view-link-btn").forEach(btn => addButtonHoverEffect(btn, "#2b6cb0", "#1d4ed8"));
+    }
 
-        document.querySelectorAll(".view-file-btn").forEach(btn => {
-            btn.addEventListener("click", function() {
-                const idToView = this.getAttribute("data-id");
+    // --- Event Delegation สำหรับจัดการคลิกดูไฟล์ / ลบผลงาน (ป้องกัน Memory Leaks) ---
+    if (portfolioContainer) {
+        portfolioContainer.addEventListener("click", async (e) => {
+            const viewBtn = e.target.closest(".view-file-btn");
+            const deleteBtn = e.target.closest(".delete-portfolio-btn");
+
+            if (viewBtn) {
+                const idToView = viewBtn.getAttribute("data-id");
                 const targetData = localPortfoliosRaw.find(d => d.id === idToView);
                 if (targetData && previewModal && modalContentArea) {
                     modalContentArea.innerHTML = "";
@@ -385,20 +398,18 @@ closeSidebar();
                     const isImage = targetData.content && targetData.content.startsWith("data:image/");
 
                     if (isImage) {
-                        modalContentArea.innerHTML = `<img id="zoomable-img" src="${targetData.content}" style="max-width: 100%; max-height: 100%; object-fit: contain; transform: translate(0px, 0px) scale(1); transform-origin: center; cursor: grab; user-select: none; transition: transform 0.1s ease-out;" draggable="false" />`;
+                        modalContentArea.innerHTML = `<img id="zoomable-img" src="${sanitizeUrl(targetData.content)}" style="max-width: 100%; max-height: 100%; object-fit: contain; transform: translate(0px, 0px) scale(1); transform-origin: center; cursor: grab; user-select: none; transition: transform 0.1s ease-out;" draggable="false" />`;
                         initZoomAndPan();
                     } else {
-                        modalContentArea.innerHTML = `<object data="${targetData.content}" type="application/pdf" width="100%" height="100%" style="border-radius: 8px;"><p>ไม่สามารถแสดงพรีวิวได้ <a href="${targetData.content}" download="${escapeHtml(targetData.title)}">ดาวน์โหลดไฟล์ที่นี่</a></p></object>`;
+                        modalContentArea.innerHTML = `<object data="${sanitizeUrl(targetData.content)}" type="application/pdf" width="100%" height="100%" style="border-radius: 8px;"><p>ไม่สามารถแสดงพรีวิวได้ <a href="${sanitizeUrl(targetData.content)}" download="${escapeHtml(targetData.title)}">ดาวน์โหลดไฟล์ที่นี่</a></p></object>`;
                     }
                     
                     previewModal.style.display = "flex";
                 }
-            });
-        });
+            }
 
-        document.querySelectorAll(".delete-portfolio-btn").forEach(btn => {
-            btn.addEventListener("click", async function() {
-                const idToDelete = this.getAttribute("data-id");
+            if (deleteBtn) {
+                const idToDelete = deleteBtn.getAttribute("data-id");
                 if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบผลงานรายการนี้?")) {
                     try {
                         await deleteDoc(doc(db, "portfolios", idToDelete));
@@ -409,7 +420,7 @@ closeSidebar();
                         alert("❌ เกิดข้อผิดพลาดในการลบผลงาน");
                     }
                 }
-            });
+            }
         });
     }
 
