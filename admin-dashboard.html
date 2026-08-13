@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hello U - Admin Dashboard</title>
+    <link rel="icon" type="image/png" href="https://cdn.phototourl.com/free/2026-07-02-bf2530e4-cb2e-459f-93de-d59034eb5c2c.png">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="page-admin">
+
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+    <div class="dashboard-wrapper">
+        <!-- Sidebar Menu -->
+        <aside id="sidebar" class="sidebar">
+            <button type="button" id="menuToggleBtn" class="arrow-toggle-btn" title="เปิด/ปิด เมนู" aria-label="Toggle Navigation">
+                <i id="toggleIcon" class="fa-solid fa-chevron-left"></i>
+            </button>
+
+            <div>
+                <div class="sidebar-brand">
+                    <img src="https://cdn.phototourl.com/free/2026-07-02-bf2530e4-cb2e-459f-93de-d59034eb5c2c.png" alt="Hello U Logo" class="brand-icon" style="width: 32px; height: 32px; object-fit: contain;">
+                    <span class="brand-text">Hello U Admin</span>
+                </div>
+                
+                <nav class="sidebar-menu">
+                    <a href="admin-dashboard.html" class="menu-item active">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span class="menu-text">สถิติผู้ใช้ทั้งหมด</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="user-info-box" id="userInfoBox" style="cursor: pointer;">
+                    <div class="avatar-box">
+                        <img id="userAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=Admin" alt="User Avatar">
+                    </div>
+                    <div class="user-meta">
+                        <p id="userNameDisplay">ผู้ดูแลระบบ</p>
+                        <p id="userOfficerIdDisplay" style="font-size: 11px; opacity: 0.7; color: #38bdf8;">รหัสเจ้าหน้าที่: -</p>
+                    </div>
+                </div>
+                
+                <button type="button" id="settingsBtn" class="settings-btn" title="ตั้งค่าโปรไฟล์">
+                    <i class="fa-solid fa-gear"></i>
+                    <span class="menu-text">ตั้งค่าโปรไฟล์</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="dashboard-header">
+                <h2 class="page-title">สถิติผู้ใช้งานทั้งหมด (User Only)</h2>
+                
+                <!-- สรุปจำนวนคนแบบ Pill -->
+                <!-- สรุปจำนวนคนแบบ Stat Cards -->
+<div class="stats-overview-grid">
+    <!-- Card 1: ผู้ใช้ทั้งหมด -->
+    <div class="stat-info-card">
+        <div class="stat-card-header">
+            <div class="stat-icon-box total-icon">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <span class="stat-badge total-badge">
+                <i class="fa-solid fa-database"></i> สมาชิกทั้งหมด (ไม่รวม ADMIN)
+            </span>
+        </div>
+        <div class="stat-card-body">
+            <span class="stat-label">ผู้ใช้ทั้งหมด</span>
+            <div class="stat-value-group">
+                <span id="statTotalUsers" class="stat-number">0</span>
+                <span class="stat-unit">คน</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: กำลังใช้งาน -->
+    <div class="stat-info-card">
+        <div class="stat-card-header">
+            <div class="stat-icon-box active-icon">
+                <i class="fa-solid fa-user-check"></i>
+            </div>
+            <span class="stat-badge active-badge">
+                <i class="fa-solid fa-circle pulse-dot"></i> ในระบบ
+            </span>
+        </div>
+        <div class="stat-card-body">
+            <span class="stat-label">กำลังใช้งาน</span>
+            <div class="stat-value-group">
+                <span id="statActiveUsers" class="stat-number">0</span>
+                <span class="stat-unit">คน</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+            <!-- Charts Grid -->
+            <div class="charts-grid-3x2">
+                
+                <!-- 1. สถานะผู้ใช้ -->
+                <div class="chart-box-card">
+                    <h3>สถานะผู้ใช้ (ใช้งาน / ไม่ใช้งาน)</h3>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="userStatusChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 2. สัดส่วนเพศ -->
+                <div class="chart-box-card">
+                    <h3>สัดส่วนเพศ</h3>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 3. วุฒิการศึกษา -->
+                <div class="chart-box-card">
+                    <h3>วุฒิการศึกษา</h3>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="educationChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 4. เหตุผลในการใช้งาน -->
+                <div class="chart-box-card">
+                    <h3>เหตุผลในการใช้งาน</h3>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="reasonChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 5. ช่วงอายุผู้ใช้งาน -->
+                <div class="chart-box-card">
+                    <h3>ช่วงอายุผู้ใช้งาน</h3>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="ageChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 6. การใช้งานพื้นที่จัดเก็บข้อมูล -->
+                <div class="chart-box-card full-width-card" id="storageCard">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">การใช้งานพื้นที่จัดเก็บข้อมูล</h3>
+                        <button type="button" id="storageToggleBtn" style="background: rgba(189, 0, 255, 0.2); border: 1px solid #bd00ff; color: #38bdf8; padding: 4px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.2s ease;">ดูเป็น GB</button>
+                    </div>
+                    
+                    <div class="phone-storage-container">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+                            <div>
+                                <span id="storagePrimaryText" style="font-size: 1.8rem; font-weight: bold; color: inherit;">0%</span>
+                                <span id="storageSecondaryText" style="font-size: 0.9rem; opacity: 0.7; margin-left: 5px;">(0.00 / 10 GB)</span>
+                            </div>
+                            <span style="color: #eab308; font-weight: bold; font-size: 0.95rem;">ใช้งานแล้ว</span>
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        <div style="width: 100%; height: 12px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; margin-bottom: 10px;">
+                            <div id="storageProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #bd00ff, #eab308); border-radius: 10px; transition: width 0.5s ease;"></div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; opacity: 0.7;">
+                            <span id="storageMaxText">ความจุทั้งหมด 10 GB</span>
+                            <span id="storageRemainingText">เหลือพื้นที่อีก 10.00 GB</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="admin-dashboard.js"></script>
+</body>
+</html>
