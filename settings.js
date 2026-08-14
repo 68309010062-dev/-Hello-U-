@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const deleteConfirmInput = document.getElementById("deleteConfirmInput");
     const modalUserEmailText = document.getElementById("modalUserEmailText");
 
-    // ฟังก์ชันเพิ่มเอฟเฟกต์ให้กับปุ่มย้อนกลับ
+    // 🔙 ฟังก์ชันปุ่มย้อนกลับ (เช็คว่ามาจาก admin-dashboard.html หรือ main.html)
     if (backToMainBtn) {
         backToMainBtn.addEventListener("mouseenter", () => {
             const currentBg = localStorage.getItem("userBackground") || "#0f0c1b";
@@ -39,8 +39,16 @@ document.addEventListener("DOMContentLoaded", () => {
         backToMainBtn.addEventListener("mouseleave", () => {
             backToMainBtn.style.background = "transparent";
         });
+        
         backToMainBtn.addEventListener("click", () => {
-            window.location.href = "main.html";
+            const referrer = document.referrer;
+            // ตรวจสอบว่าเปิดมาจากหน้า Admin หรือไม่
+            if (referrer.includes("admin-dashboard.html")) {
+                window.location.href = "admin-dashboard.html";
+            } else {
+                // ถ้าไม่ใช่ admin หรือเข้าผ่านหน้าหลัก ให้ย้อนกลับไป main.html
+                window.location.href = "main.html";
+            }
         });
     }
 
@@ -230,16 +238,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 saveProfileBtn.disabled = true;
                 saveProfileBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> กำลังบันทึก...`;
 
-                const isBase64 = newPhotoUrl.startsWith("data:");
-                const updateData = { displayName: newName };
+                const profileUpdateObj = { displayName: newName };
                 
-                if (newPhotoUrl && !isBase64) {
-                    updateData.photoURL = newPhotoUrl;
-                } else if (isBase64) {
-                    updateData.photoURL = "https://uploaded-from-local.storage";
+                if (newPhotoUrl && !newPhotoUrl.startsWith("data:")) {
+                    profileUpdateObj.photoURL = newPhotoUrl;
                 }
-                
-                await updateProfile(currentUser, updateData);
+
+                await updateProfile(currentUser, profileUpdateObj);
 
                 const userDocRef = doc(db, "users", currentUser.uid);
                 await setDoc(userDocRef, {
@@ -258,6 +263,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (fileNameDisplay) fileNameDisplay.textContent = "ยังไม่ได้เลือกไฟล์";
 
                 alert("🎉 บันทึกข้อมูลโปรไฟล์ของคุณสำเร็จแล้ว!");
+                window.location.reload();
+
             } catch (error) {
                 console.error("Save Profile Error: ", error);
                 alert("❌ เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง");
@@ -318,7 +325,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 🔥 ส่วนสำคัญที่แก้ไข: ลบข้อมูลผลงานทั้งหมด + ข้อมูลผู้ใช้ + บัญชีผู้ใช้
     if (finalDeleteBtn && deleteConfirmInput && deleteModal) {
         finalDeleteBtn.addEventListener("click", async () => {
             if (!currentUser) return;
@@ -336,7 +342,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     finalDeleteBtn.disabled = true;
                     finalDeleteBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> กำลังลบข้อมูล...`;
 
-                    // 1. ค้นหาและลบผลงานทั้งหมดของผู้ใช้นี้ออกจากคอลเลกชัน "portfolios"
                     const portfolioRef = collection(db, "portfolios");
                     const q = query(portfolioRef, where("userId", "==", currentUser.uid));
                     const querySnapshot = await getDocs(q);
@@ -347,13 +352,9 @@ document.addEventListener("DOMContentLoaded", () => {
                             batch.delete(docSnap.ref);
                         });
                         await batch.commit();
-                        console.log(`🗑️ ลบผลงานจำนวน ${querySnapshot.size} ชิ้น เรียบร้อยแล้ว`);
                     }
 
-                    // 2. ลบเอกสารข้อมูลส่วนตัวในคอลเลกชัน "users"
                     await deleteDoc(doc(db, "users", currentUser.uid));
-
-                    // 3. ลบบัญชีออกจาก Firebase Auth
                     await deleteUser(currentUser);
 
                     alert("🎉 ลบบัญชีผู้ใช้และผลงานทั้งหมดของคุณเรียบร้อยแล้ว");
@@ -361,7 +362,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 } catch (error) {
                     console.error("❌ Delete Account Error:", error);
-                    
                     if (error.code === 'auth/requires-recent-login') {
                         alert("⚠️ เพื่อความปลอดภัยสูง กรุณาลงชื่อออกแล้วเข้าสู่ระบบใหม่อีกครั้ง ก่อนทำการลบบัญชีครับ");
                     } else {
