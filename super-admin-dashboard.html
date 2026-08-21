@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hello U - Super Admin Dashboard</title>
+    <link rel="icon" type="image/png" href="https://cdn.phototourl.com/free/2026-07-02-bf2530e4-cb2e-459f-93de-d59034eb5c2c.png">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="page-admin">
+
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+    <div class="dashboard-wrapper">
+        <!-- Sidebar Menu -->
+        <aside id="sidebar" class="sidebar">
+            <button type="button" id="menuToggleBtn" class="arrow-toggle-btn" title="เปิด/ปิด เมนู" aria-label="Toggle Navigation">
+                <i id="toggleIcon" class="fa-solid fa-chevron-left"></i>
+            </button>
+
+            <div>
+                <div class="sidebar-brand">
+                    <img src="https://cdn.phototourl.com/free/2026-07-02-bf2530e4-cb2e-459f-93de-d59034eb5c2c.png" alt="Hello U Logo" class="brand-icon" style="width: 32px; height: 32px; object-fit: contain;">
+                    <span class="brand-text">Hello U Super Admin</span>
+                </div>
+                
+                <nav class="sidebar-menu">
+                    <a href="super-admin-dashboard.html" class="menu-item active">
+                        <i class="fa-solid fa-user-shield"></i>
+                        <span class="menu-text">จัดการผู้ดูแลระบบ</span>
+                    </a>
+                    <a href="admin-dashboard.html" class="menu-item">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span class="menu-text">สถิติผู้ใช้ทั้งหมด</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="user-info-box" id="userInfoBox" style="cursor: pointer;">
+                    <div class="avatar-box">
+                        <img id="userAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=SuperAdmin" alt="User Avatar">
+                    </div>
+                    <div class="user-meta">
+                        <p id="userNameDisplay">Super Admin</p>
+                        <p id="userOfficerIdDisplay" style="font-size: 11px; opacity: 0.7; color: #38bdf8;">รหัสเจ้าหน้าที่: SUPER-01</p>
+                    </div>
+                </div>
+                
+                <button type="button" id="settingsBtn" class="settings-btn" title="ตั้งค่าโปรไฟล์">
+                    <i class="fa-solid fa-gear"></i>
+                    <span class="menu-text">ตั้งค่าโปรไฟล์</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- 1. Header Section -->
+            <div class="dashboard-header" style="margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <h2 class="page-title" style="margin: 0;"><i class="fa-solid fa-shield-halved" style="color: #a855f7; margin-right: 8px;"></i> ระบบจัดการผู้ดูแลระบบ (Super Admin Management)</h2>
+                
+                <!-- ปุ่มเปลี่ยน Admin Key -->
+                <button type="button" id="changeAdminKeyBtn" style="background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.5); color: #e9d5ff; padding: 10px 16px; border-radius: 10px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                    <i class="fa-solid fa-key" style="color: #c084fc;"></i> เปลี่ยน Admin Key
+                </button>
+            </div>
+
+            <!-- 2. Stat Card Section -->
+            <div class="stats-overview-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-bottom: 25px;">
+                <div class="stat-info-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon-box" style="background: rgba(168, 85, 247, 0.2); color: #a855f7;">
+                            <i class="fa-solid fa-user-gear"></i>
+                        </div>
+                        <span class="stat-badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);">
+                            <i class="fa-solid fa-shield-check"></i> ผู้ดูแลระบบในระบบ
+                        </span>
+                    </div>
+                    <div class="stat-card-body">
+                        <span class="stat-label">ผู้ดูแลระบบทั้งหมด</span>
+                        <div class="stat-value-group">
+                            <span id="totalAdminsCount" class="stat-number">0</span>
+                            <span class="stat-unit">คน</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Navigation Tabs -->
+            <div id="adminTabNav" style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                <button type="button" id="tabAllAdmins" class="tab-btn active" style="padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(168, 85, 247, 0.4); background: rgba(168, 85, 247, 0.2); color: #ffffff; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                    <i class="fa-solid fa-users-gear" style="margin-right: 6px;"></i> ผู้ดูแลระบบทั้งหมด
+                </button>
+                <button type="button" id="tabPendingAdmins" class="tab-btn" style="padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.8); cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                    <i class="fa-solid fa-user-clock" style="margin-right: 6px;"></i> จัดการการอนุมัติแอดมิน
+                </button>
+                <button type="button" id="tabBlockedAdmins" class="tab-btn" style="padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.8); cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                    <i class="fa-solid fa-user-slash" style="margin-right: 6px; color: #fca5a5;"></i> รายการถูกบล็อก
+                </button>
+            </div>
+
+            <!-- 4. Admin Management Table Card -->
+            <div class="super-card" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 24px; backdrop-filter: blur(10px);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                    <h3 id="tableTitle" style="margin: 0; font-size: 1.2rem; font-weight: 600;"><i class="fa-solid fa-users-gear" style="margin-right: 8px; opacity: 0.8;"></i> รายชื่อผู้ดูแลระบบทั้งหมด</h3>
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; width: 100%; max-width: 580px; justify-content: flex-end;">
+                        <!-- ช่องค้นหา (Search Box) -->
+                        <div style="position: relative; min-width: 240px; flex: 1;">
+                            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); opacity: 0.5;"></i>
+                            <input type="text" id="adminSearchInput" placeholder="ค้นหาชื่อ, อีเมล หรือรหัส..." style="width: 100%; padding: 8px 12px 8px 38px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.2); color: inherit; font-size: 0.9rem; outline: none; box-sizing: border-box;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ตารางข้อมูล Admin -->
+                <div class="table-container" style="overflow-x: auto; width: 100%;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.15); opacity: 0.8;">
+                                <th style="padding: 12px 16px; width: 60px;">#</th>
+                                <th style="padding: 12px 16px;">ผู้ดูแลระบบ</th>
+                                <th style="padding: 12px 16px;">รหัสเจ้าหน้าที่</th>
+                                <th style="padding: 12px 16px;">สิทธิ์ / รายละเอียด</th>
+                                <th style="padding: 12px 16px; text-align: center; width: 180px;">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center; opacity: 0.6; padding: 20px;">กำลังโหลดข้อมูลผู้ดูแลระบบ...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal ป๊อปอัปรายละเอียดผู้ถูกบล็อก -->
+    <div id="blockedDetailModal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(15, 12, 27, 0.75); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: rgba(30, 27, 50, 0.95); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 20px; width: 100%; max-width: 480px; padding: 28px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(168, 85, 247, 0.15); color: #ffffff; position: relative; animation: modalPop 0.25s ease-out;">
+            
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                        <i class="fa-solid fa-user-slash"></i>
+                    </div>
+                    <h3 style="margin: 0; font-size: 1.15rem; font-weight: 600;">รายละเอียดผู้ถูกบล็อก</h3>
+                </div>
+                <button id="closeModalBtn" style="background: transparent; border: none; color: rgba(255, 255, 255, 0.6); font-size: 1.2rem; cursor: pointer; padding: 5px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255, 255, 255, 0.6)'">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Body Content -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <!-- Profile Overview -->
+                <div style="display: flex; align-items: center; gap: 14px; background: rgba(255, 255, 255, 0.03); padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                    <img id="modalAvatar" src="" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(168, 85, 247, 0.4);">
+                    <div>
+                        <h4 id="modalName" style="margin: 0 0 4px 0; font-size: 1.05rem; color: #f8fafc;">-</h4>
+                        <p id="modalEmail" style="margin: 0; font-size: 0.85rem; color: #94a3b8;"><i class="fa-regular fa-envelope"></i> -</p>
+                    </div>
+                </div>
+
+                <!-- Details Grid -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div style="background: rgba(255, 255, 255, 0.03); padding: 12px; border-radius: 10px;">
+                        <span style="font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 4px;">รหัสเจ้าหน้าที่</span>
+                        <strong id="modalOfficerId" style="color: #38bdf8; font-size: 0.95rem;">-</strong>
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.03); padding: 12px; border-radius: 10px;">
+                        <span style="font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 4px;">ระยะเวลาบล็อก</span>
+                        <strong id="modalBlockUntil" style="color: #fde047; font-size: 0.95rem;">-</strong>
+                    </div>
+                </div>
+
+                <!-- Reason Box -->
+                <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); padding: 14px; border-radius: 12px;">
+                    <span style="font-size: 0.8rem; color: #fca5a5; font-weight: 600; display: block; margin-bottom: 6px;"><i class="fa-solid fa-circle-exclamation"></i> สาเหตุการบล็อก</span>
+                    <p id="modalReason" style="margin: 0; font-size: 0.9rem; color: #e2e8f0; line-height: 1.5; white-space: pre-line;">-</p>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div style="margin-top: 24px; display: flex; gap: 10px; justify-content: flex-end;">
+                <button id="modalUnblockBtn" style="background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.4); color: #86efac; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: 500; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                    <i class="fa-solid fa-lock-open"></i> ปลดบล็อกผู้ใช้งาน
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    @keyframes modalPop {
+        0% { opacity: 0; transform: scale(0.92); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    </style>
+
+    <script type="module" src="super-admin-dashboard.js"></script>
+</body>
+</html>
