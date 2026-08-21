@@ -1,21 +1,34 @@
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, getDoc, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     let rawUsersData = [];
+    let currentUserRole = "admin"; // ค่าเริ่มต้นสำหรับเก็บ Role ของผู้ใช้ปัจจุบัน
 
-    // 🛠️ โควตาพื้นที่รวมของระบบ (ตั้งไว้ที่ 10 GB)
+    // 🎨 Helper: สร้าง Default Avatar SVG ประจำตัวตามอักษรชื่อ (เหมือน Super Admin)
+    function generateDefaultAvatar(name) {
+        const firstLetter = (name || "A").charAt(0).toUpperCase();
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+            <rect width="100%" height="100%" fill="#8b5cf6"/>
+            <text x="50%" y="55%" font-size="45" font-weight="bold" fill="#ffffff" dominant-baseline="middle" text-anchor="middle">${firstLetter}</text>
+        </svg>`;
+        return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+    }
+
+    // 🛠️ โควตาพื้นที่รวมของระบบ (10 GB)
     const MAX_STORAGE_QUOTA = 10 * 1024 * 1024 * 1024; // 10 GB in Bytes
     let totalUsedStorageBytes = 0;
-    let storageDisplayMode = "percent"; // สถานะแสดงผลพื้นที่ ("percent" หรือ "gb")
+    let storageDisplayMode = "percent"; // "percent" หรือ "gb"
 
-    // Chart Instances
-    let statusChartInstance = null;
-    let genderChartInstance = null;
-    let educationChartInstance = null;
-    let reasonChartInstance = null;
-    let ageChartInstance = null;
+    // Chart Instances Object เพื่อการจัดการที่ปลอดภัย
+    const charts = {
+        status: null,
+        gender: null,
+        education: null,
+        reason: null,
+        age: null
+    };
 
     // Elements
     const userNameDisplay = document.getElementById("userNameDisplay");
@@ -29,9 +42,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const sidebarOverlay = document.getElementById("sidebarOverlay");
     const toggleIcon = document.getElementById("toggleIcon");
 
-    // Elements สถิติ
+    // Elements สถิติ และ ข้อความเปลี่ยนตาม Role
     const statTotalUsers = document.getElementById("statTotalUsers");
     const statActiveUsers = document.getElementById("statActiveUsers");
+    const pageTitleText = document.getElementById("pageTitleText");
+    const statBadgeText = document.getElementById("statBadgeText");
+    const superAdminMenuItem = document.getElementById("superAdminMenuItem");
 
     // Elements พื้นที่จัดเก็บข้อมูล
     const storageToggleBtn = document.getElementById("storageToggleBtn");
@@ -40,6 +56,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const storageProgressBar = document.getElementById("storageProgressBar");
     const storageMaxText = document.getElementById("storageMaxText");
     const storageRemainingText = document.getElementById("storageRemainingText");
+
+    // ⚡ [Fast-Path Step 1] โหลด Role จาก Cache เพื่อแสดง/ซ่อนเมนูทันที ไม่ต้องรอ Firebase ตอบกลับ
+    const cachedRole = localStorage.getItem("lastUserRole");
+    if (cachedRole && superAdminMenuItem) {
+        currentUserRole = cachedRole;
+        superAdminMenuItem.style.display = (cachedRole === "superadmin") ? "flex" : "none";
+    }
 
     // --- Helper: คำนวณอายุจริงจาก birthDate ---
     function calculateAge(birthDateStr) {
@@ -72,14 +95,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const currentDay = today.getDate();
 
         let age = currentYear - birthYearAD;
-
         if (currentMonth < month || (currentMonth === month && currentDay < day)) {
             age--;
         }
 
-        if (age < 0) age = 0;
-
-        return age;
+        return age < 0 ? 0 : age;
     }
 
     // --- Helper: Hover Effect ---
@@ -96,8 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.assign("settings.html");
     }
 
-    const clickableProfileElements = [settingsBtn, userInfoBox, userAvatar, userNameDisplay, userOfficerIdDisplay];
-    clickableProfileElements.forEach(el => {
+    [settingsBtn, userInfoBox, userAvatar, userNameDisplay, userOfficerIdDisplay].forEach(el => {
         if (el) {
             el.style.cursor = "pointer";
             el.addEventListener("click", navigateToSettings);
@@ -106,25 +125,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Sidebar Controls ---
     function openSidebar() {
-        if (sidebar) {
-            sidebar.classList.add("mobile-open", "active");
-            sidebar.classList.remove("collapsed");
-        }
-        if (sidebarOverlay) {
-            sidebarOverlay.classList.add("active");
-            sidebarOverlay.style.display = "block";
-        }
+        if (sidebar) sidebar.classList.add("mobile-open", "active"), sidebar.classList.remove("collapsed");
+        if (sidebarOverlay) sidebarOverlay.classList.add("active"), sidebarOverlay.style.display = "block";
     }
 
     function closeSidebar() {
-        if (sidebar) {
-            sidebar.classList.remove("mobile-open", "active");
-            sidebar.classList.add("collapsed");
-        }
-        if (sidebarOverlay) {
-            sidebarOverlay.classList.remove("active");
-            sidebarOverlay.style.display = "none";
-        }
+        if (sidebar) sidebar.classList.remove("mobile-open", "active"), sidebar.classList.add("collapsed");
+        if (sidebarOverlay) sidebarOverlay.classList.remove("active"), sidebarOverlay.style.display = "none";
         if (toggleIcon) toggleIcon.className = "fa-solid fa-chevron-right";
     }
 
@@ -149,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // --- Theme Control (แก้ไขปรับปรุงแล้ว) ---
+    // --- Theme Control ---
     function applyGlobalTheme(color) {
         document.body.style.background = color;
         const isWhite = color === "#ffffff";
@@ -159,12 +166,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const cardBg = isWhite ? "#ffffff" : "rgba(255, 255, 255, 0.05)";
         const cardBorder = isWhite ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.1)";
 
-        // 1. ปรับสี Text หลัก และ Subtext ของ Body
         document.body.style.color = textColorMain;
         if (userNameDisplay) userNameDisplay.style.color = textColorMain;
         if (userOfficerIdDisplay) userOfficerIdDisplay.style.color = textColorSub;
 
-        // 2. ปรับ Sidebar
         const sidebarBrand = document.querySelector(".sidebar-brand");
         if (sidebar) {
             sidebar.style.backgroundColor = isWhite ? "#ffffff" : "rgba(15, 12, 27, 0.95)";
@@ -172,12 +177,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (sidebarBrand) sidebarBrand.style.color = textColorMain;
 
-        // เปลี่ยนสีเมนูลิงก์ใน Sidebar
         document.querySelectorAll(".sidebar-menu a, .nav-link, .menu-item").forEach(link => {
             link.style.color = isWhite ? "#2d3748" : "rgba(255, 255, 255, 0.8)";
         });
 
-        // 3. ปรับ Search Input
         const searchInput = document.getElementById("searchPortfolioInput");
         const searchIcon = document.querySelector(".fa-magnifying-glass");
         if (searchInput) {
@@ -187,23 +190,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (searchIcon) searchIcon.style.color = textColorSub;
 
-        // 4. หัวข้อหลัก / รอง / ตัวเลขสถิติ / รายละเอียดพื้นที่
-        document.querySelectorAll(".page-title, .chart-box-card h3, .stat-card h3, .stat-title, h1, h2, h3, h4, h5, h6").forEach(t => {
-            t.style.color = textColorMain;
-        });
-
-        document.querySelectorAll(".stat-number, .stat-value, #statTotalUsers, #statActiveUsers").forEach(num => {
-            num.style.color = textColorMain;
+        document.querySelectorAll(".page-title, .chart-box-card h3, .stat-card h3, .stat-title, h1, h2, h3, h4, h5, h6, .stat-number, .stat-value, #statTotalUsers, #statActiveUsers").forEach(el => {
+            el.style.color = textColorMain;
         });
 
         document.querySelectorAll(".stat-label, .stat-subtext, .storage-info p, .storage-details span, p, span, label").forEach(sub => {
-            // ยกเว้นปุ่มหรือส่วนที่ไม่ต้องการให้เปลี่ยนสี
             if (!sub.classList.contains("badge") && !sub.closest("button")) {
                 sub.style.color = textColorSub;
             }
         });
 
-        // 5. ปรับปุ่ม Settings
         if (settingsBtn) {
             const btnBg = isWhite ? "#edf2f7" : "rgba(255,255,255,0.05)";
             const btnHoverBg = isWhite ? "#e2e8f0" : "rgba(255,255,255,0.15)";
@@ -213,14 +209,12 @@ document.addEventListener("DOMContentLoaded", () => {
             addButtonHoverEffect(settingsBtn, btnBg, btnHoverBg);
         }
 
-        // 6. ปรับปุ่ม สลับโหมด GB/% (storageToggleBtn)
         if (storageToggleBtn) {
             storageToggleBtn.style.color = isWhite ? "#2b6cb0" : "#60a5fa";
             storageToggleBtn.style.background = isWhite ? "#ebf8ff" : "rgba(59, 130, 246, 0.15)";
             storageToggleBtn.style.border = isWhite ? "1px solid #bee3f8" : "1px solid rgba(59, 130, 246, 0.3)";
         }
 
-        // 7. การ์ดคอนเทนต์ สถิติ และ กราฟ
         document.querySelectorAll(".stat-info-card, .chart-box-card, .stat-card, .dashboard-card, .storage-card").forEach(card => {
             card.style.background = cardBg;
             card.style.border = cardBorder;
@@ -228,7 +222,6 @@ document.addEventListener("DOMContentLoaded", () => {
             card.style.boxShadow = isWhite ? "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)" : "none";
         });
 
-        // 8. Re-render กราฟเพื่อให้ Chart.js อัปเดตสี Text ใน Legend
         if (rawUsersData.length >= 0) renderAllCharts(isWhite);
     }
 
@@ -238,119 +231,148 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     loadAndApplyTheme();
+    window.addEventListener('storage', (e) => { if (e.key === 'userBackground') loadAndApplyTheme(); });
+    window.addEventListener("pageshow", loadAndApplyTheme);
 
-    window.addEventListener('storage', (e) => {
-        if (e.key === 'userBackground') loadAndApplyTheme();
-    });
-
-    window.addEventListener("pageshow", () => {
-        loadAndApplyTheme();
-    });
-
-    // --- Auth State ---
+    // --- Auth State & Role Checking (Optimization) ---
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             try {
+                // ⚡ [Fast-Path Step 2] ยิง Query พร้อมกันแบบ Parallel ดึงข้อมูลเร็วขึ้น 2 เท่า
                 const qAdmin = query(collection(db, "admins"), where("uid", "==", user.uid));
-                const adminQuerySnap = await getDocs(qAdmin);
-                
-                let adminData = null;
-                if (!adminQuerySnap.empty) {
-                    adminData = adminQuerySnap.docs[0].data();
-                }
+                const [adminQuerySnap, userDocSnap] = await Promise.all([
+                    getDocs(qAdmin),
+                    getDoc(doc(db, "users", user.uid))
+                ]);
 
-                const userDocSnap = await getDoc(doc(db, "users", user.uid));
+                const adminData = !adminQuerySnap.empty ? adminQuerySnap.docs[0].data() : null;
                 const userData = userDocSnap.exists() ? userDocSnap.data() : {};
 
+                // 📍 1. ตรวจสอบ Role ล่าสุด
+                const detectedRole = (userData?.role || adminData?.role || "admin").toLowerCase();
+                currentUserRole = (detectedRole === "superadmin" || detectedRole === "super_admin") ? "superadmin" : "admin";
+
+                // ⚡ บันทึกสิทธิ์ลง Cache ไว้ใช้ครั้งต่อไป
+                localStorage.setItem("lastUserRole", currentUserRole);
+
+                // 📍 2. อัปเดตเมนูและข้อความ UI Dynamic ตามสิทธิ์ Role
+                if (superAdminMenuItem) {
+                    superAdminMenuItem.style.display = currentUserRole === "superadmin" ? "flex" : "none";
+                }
+
+                if (currentUserRole === "superadmin") {
+                    if (pageTitleText) pageTitleText.textContent = "สถิติผู้ใช้งานทั้งระบบ (Overview)";
+                    if (statBadgeText) statBadgeText.innerHTML = `<i class="fa-solid fa-database"></i> สมาชิกทั้งหมดในระบบ (รวม Admin)`;
+                } else {
+                    if (pageTitleText) pageTitleText.textContent = "สถิติผู้ใช้งานทั้งหมด (User Only)";
+                    if (statBadgeText) statBadgeText.innerHTML = `<i class="fa-solid fa-database"></i> สมาชิกทั้งหมด (ไม่รวม ADMIN)`;
+                }
+
+                const displayName = adminData?.displayName || adminData?.name || userData?.displayName || user.displayName || "ผู้ดูแลระบบ";
+
                 if (userNameDisplay) {
-                    userNameDisplay.textContent = 
-                        adminData?.displayName || adminData?.name || 
-                        userData?.displayName || user.displayName || "ผู้ดูแลระบบ";
+                    const roleLabel = currentUserRole === "superadmin" ? " (Super Admin)" : " (Admin)";
+                    userNameDisplay.textContent = displayName + roleLabel;
                 }
 
                 if (userOfficerIdDisplay) {
-                    const officerId = 
-                        adminData?.officerId || adminData?.officerID || adminData?.officer_id || adminData?.officerCode ||
-                        userData?.officerId  || userData?.officerID  || userData?.officer_id  || userData?.officerCode  || 
-                        "-";
-
+                    const officerId = adminData?.officerId || adminData?.officerID || adminData?.officer_id || adminData?.officerCode ||
+                                      userData?.officerId  || userData?.officerID  || userData?.officer_id  || userData?.officerCode  || "-";
                     userOfficerIdDisplay.textContent = `รหัสเจ้าหน้าที่: ${officerId}`;
                 }
 
+                // 🎯 [Fix Avatar] ปรับการสร้าง Avatar ให้เหมือนหน้า Super Admin
                 if (userAvatar) {
-                    const currentPhoto = userData?.photoURL || adminData?.photoURL || adminData?.avatar || user.photoURL;
-                    if (currentPhoto) {
-                        const cacheBuster = currentPhoto.startsWith("data:") 
-                            ? currentPhoto 
-                            : `${currentPhoto}${currentPhoto.includes('?') ? '&' : '?'}t=${Date.now()}`;
-                        userAvatar.src = cacheBuster;
+                    const possiblePhotos = [
+                        adminData?.photoURL,
+                        adminData?.avatar,
+                        userData?.photoURL,
+                        user.photoURL
+                    ].filter(url => typeof url === "string" && url.trim() !== "");
+
+                    const defaultAvatar = generateDefaultAvatar(displayName);
+                    const currentPhoto = possiblePhotos.length > 0 ? possiblePhotos[0] : defaultAvatar;
+
+                    if (currentPhoto.startsWith("data:")) {
+                        userAvatar.src = currentPhoto;
                     } else {
-                        userAvatar.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`;
+                        const cacheBuster = `t=${Date.now()}`;
+                        userAvatar.src = currentPhoto.includes("?") ? `${currentPhoto}&${cacheBuster}` : `${currentPhoto}?${cacheBuster}`;
                     }
+
+                    userAvatar.onerror = () => {
+                        userAvatar.onerror = null;
+                        userAvatar.src = defaultAvatar;
+                    };
                 }
 
-            } catch (e) { 
-                console.error("Error loading admin profile:", e); 
-            }
+                // 📍 3. เรียกใช้ Real-time Listener ตามสิทธิ์
+                listenToUsersStatistics();
 
-            loadUsersStatistics();
+            } catch (e) { 
+                console.error("Error loading profile:", e); 
+            }
         } else {
+            localStorage.removeItem("lastUserRole");
             window.location.href = "index.html";
         }
     });
 
-    // --- Fetch Users Statistics ---
-    async function loadUsersStatistics() {
+    // --- Fetch Users Statistics (Real-time Listening) ---
+    function listenToUsersStatistics() {
         try {
             const usersRef = collection(db, "users");
-            const q = query(usersRef, where("role", "==", "user"));
-            const querySnapshot = await getDocs(q);
+            
+            // 📍 ปรับเปลี่ยน Query: ถ้าเป็น Super Admin ให้ดึงข้อมูลผู้ใช้ทั้งหมด
+            let q = usersRef;
+            if (currentUserRole !== "superadmin") {
+                q = query(usersRef, where("role", "==", "user"));
+            }
 
-            rawUsersData = [];
-            totalUsedStorageBytes = 0;
+            onSnapshot(q, (querySnapshot) => {
+                rawUsersData = [];
+                totalUsedStorageBytes = 0;
 
-            querySnapshot.forEach((docItem) => {
-                const userData = docItem.data();
-                rawUsersData.push({ id: docItem.id, ...userData });
+                querySnapshot.forEach((docItem) => {
+                    const userData = docItem.data();
+                    rawUsersData.push({ id: docItem.id, ...userData });
 
-                const userStorage = userData.usedStorage || userData.storageUsed || userData.storageSize || 0;
-                totalUsedStorageBytes += Number(userStorage);
+                    const userStorage = userData.usedStorage || userData.storageUsed || userData.storageSize || 0;
+                    totalUsedStorageBytes += Number(userStorage);
+                });
+
+                // คำนวณผู้ใช้งานออนไลน์ด้วย Heartbeat Check
+                const THREE_MINUTES_MS = 3 * 60 * 1000;
+                const now = Date.now();
+
+                const activeCount = rawUsersData.filter(u => {
+                    if (!u.isOnline) return false;
+
+                    const lastSeenTime = u.lastSeen || u.lastLogin || u.lastActive;
+                    if (!lastSeenTime) return false;
+
+                    const lastSeenDate = lastSeenTime.toDate ? lastSeenTime.toDate() : new Date(lastSeenTime);
+                    return (now - lastSeenDate.getTime()) <= THREE_MINUTES_MS;
+                }).length;
+
+                if (statTotalUsers) statTotalUsers.textContent = rawUsersData.length;
+                if (statActiveUsers) statActiveUsers.textContent = activeCount;
+
+                setupStorageToggleBtn();
+                const currentTheme = localStorage.getItem("userBackground") || "linear-gradient(180deg, #0f0c1b 0%, #bd00ff 100%)";
+                renderAllCharts(currentTheme === "#ffffff");
+            }, (error) => {
+                console.error("Error with real-time listener:", error);
             });
 
-            const totalCount = rawUsersData.length;
-            
-            // 🛠️ นับ Active Users (ย้อนหลัง 15 นาที)
-            const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-
-            const activeCount = rawUsersData.filter(u => {
-                if (u.isOnline === true) return true;
-
-                const lastSeenTime = u.lastSeen || u.lastLogin || u.lastActive;
-                if (lastSeenTime) {
-                    const lastSeenDate = lastSeenTime.toDate ? lastSeenTime.toDate() : new Date(lastSeenTime);
-                    return lastSeenDate >= fifteenMinutesAgo;
-                }
-
-                return false;
-            }).length;
-
-            if (statTotalUsers) statTotalUsers.textContent = totalCount;
-            if (statActiveUsers) statActiveUsers.textContent = activeCount;
-
-            setupStorageToggleBtn();
-
-            const currentTheme = localStorage.getItem("userBackground") || "linear-gradient(180deg, #0f0c1b 0%, #bd00ff 100%)";
-            renderAllCharts(currentTheme === "#ffffff");
-
         } catch (error) {
-            console.error("Error fetching users stats:", error);
+            console.error("Error setting up listener:", error);
         }
     }
 
     // --- Setup ปุ่ม Toggle เปลี่ยนโหมดแสดงผลพื้นที่ ---
     function setupStorageToggleBtn() {
         if (!storageToggleBtn) return;
-
         storageToggleBtn.onclick = (e) => {
             e.stopPropagation();
             storageDisplayMode = storageDisplayMode === "percent" ? "gb" : "percent";
@@ -363,21 +385,12 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateStorageUI() {
         const usedGB = parseFloat((totalUsedStorageBytes / (1024 * 1024 * 1024)).toFixed(2));
         const maxGB = parseFloat((MAX_STORAGE_QUOTA / (1024 * 1024 * 1024)).toFixed(0));
-        let usedPercent = parseFloat(((totalUsedStorageBytes / MAX_STORAGE_QUOTA) * 100).toFixed(1));
-        if (usedPercent > 100) usedPercent = 100;
+        let usedPercent = Math.min(100, parseFloat(((totalUsedStorageBytes / MAX_STORAGE_QUOTA) * 100).toFixed(1)));
 
-        if (storagePrimaryText) {
-            storagePrimaryText.textContent = storageDisplayMode === "percent" ? `${usedPercent}%` : `${usedGB} GB`;
-        }
-        if (storageSecondaryText) {
-            storageSecondaryText.textContent = storageDisplayMode === "percent" ? `(${usedGB} / ${maxGB} GB)` : `/ ${maxGB} GB`;
-        }
-        if (storageProgressBar) {
-            storageProgressBar.style.width = `${usedPercent}%`;
-        }
-        if (storageMaxText) {
-            storageMaxText.textContent = `ความจุทั้งหมด ${maxGB} GB`;
-        }
+        if (storagePrimaryText) storagePrimaryText.textContent = storageDisplayMode === "percent" ? `${usedPercent}%` : `${usedGB} GB`;
+        if (storageSecondaryText) storageSecondaryText.textContent = storageDisplayMode === "percent" ? `(${usedGB} / ${maxGB} GB)` : `/ ${maxGB} GB`;
+        if (storageProgressBar) storageProgressBar.style.width = `${usedPercent}%`;
+        if (storageMaxText) storageMaxText.textContent = `ความจุทั้งหมด ${maxGB} GB`;
         if (storageRemainingText) {
             const remaining = (maxGB - usedGB).toFixed(2);
             storageRemainingText.textContent = `เหลือพื้นที่อีก ${remaining < 0 ? '0.00' : remaining} GB`;
@@ -389,200 +402,67 @@ document.addEventListener("DOMContentLoaded", () => {
         const textColor = isWhite ? "#2d3748" : "rgba(255, 255, 255, 0.85)";
         const emptyColor = isWhite ? "#e2e8f0" : "rgba(255, 255, 255, 0.15)";
 
-        // 1. อัปเดตการ์ดพื้นที่จัดเก็บข้อมูล
         updateStorageUI();
 
-        // 2. สถานะการใช้งาน
-        const totalUsers = rawUsersData.length;
-        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-        const activeUsers = rawUsersData.filter(u => {
-            if (u.isOnline === true) return true;
-            const lastSeenTime = u.lastSeen || u.lastLogin || u.lastActive;
-            if (lastSeenTime) {
-                const lastSeenDate = lastSeenTime.toDate ? lastSeenTime.toDate() : new Date(lastSeenTime);
-                return lastSeenDate >= fifteenMinutesAgo;
-            }
-            return false;
-        }).length;
-        const inactiveUsers = totalUsers - activeUsers;
+        const THREE_MINUTES_MS = 3 * 60 * 1000;
+        const now = Date.now();
 
-        statusChartInstance = createDoughnutChart(
-            "userStatusChart",
-            statusChartInstance,
-            ["กำลังใช้งาน", "ไม่อยู่ในระบบ"],
-            [activeUsers, inactiveUsers],
-            ["#10b981", "#64748b"],
-            textColor,
-            emptyColor,
-            "%",
-            true
-        );
-
-        // 3. สัดส่วนเพศ
-        const male = rawUsersData.filter(u => {
-            const g = String(u.gender || "").toLowerCase();
-            return g === "male" || g.includes("ชาย");
-        }).length;
-
-        const female = rawUsersData.filter(u => {
-            const g = String(u.gender || "").toLowerCase();
-            return g === "female" || g.includes("หญิง");
-        }).length;
-
-        const lgbtq = rawUsersData.filter(u => {
-            const g = String(u.gender || "").toLowerCase();
-            return g.includes("lgbt") || g.includes("ทางเลือก") || g.includes("อื่นๆ");
-        }).length;
-
-        const unspecificGender = rawUsersData.filter(u => {
-            const g = String(u.gender || "").trim();
-            return g === "" || g.includes("ไม่ระบุ");
-        }).length;
-
-        genderChartInstance = createDoughnutChart(
-            "genderChart",
-            genderChartInstance,
-            ["ชาย", "หญิง", "LGBTQ+", "ไม่ระบุ"],
-            [male, female, lgbtq, unspecificGender],
-            ["#3b82f6", "#ec4899", "#8b5cf6", "#94a3b8"],
-            textColor,
-            emptyColor,
-            "%",
-            true
-        );
-
-        // 4. วุฒิการศึกษา
-        const eduJunior = rawUsersData.filter(u => {
-            const e = String(u.education || "").trim();
-            return e.includes("มัธยมศึกษาตอนต้น") || e.includes("ต่ำกว่า");
-        }).length;
-
-        const eduSenior = rawUsersData.filter(u => {
-            const e = String(u.education || "").trim();
-            return e.includes("มัธยมศึกษาตอนปลาย") || e.includes("ปวช");
-        }).length;
-
-        const eduDip = rawUsersData.filter(u => {
-            const e = String(u.education || "").trim();
-            return e.includes("อนุปริญญา") || e.includes("ปวส");
-        }).length;
-
-        const eduBachelor = rawUsersData.filter(u => {
-            const e = String(u.education || "").trim();
-            return e === "ปริญญาตรี" || (e.includes("ปริญญาตรี") && !e.includes("โท") && !e.includes("เอก"));
-        }).length;
-
-        const eduMaster = rawUsersData.filter(u => {
-            const e = String(u.education || "").trim();
-            return e.includes("ปริญญาโท");
-        }).length;
-
-        const eduDoctor = rawUsersData.filter(u => {
-            const e = String(u.education || "").trim();
-            return e.includes("ปริญญาเอก");
-        }).length;
-
-        educationChartInstance = createDoughnutChart(
-            "educationChart",
-            educationChartInstance,
-            [
-                "มัธยมศึกษาตอนต้นหรือต่ำกว่า", 
-                "มัธยมศึกษาตอนปลาย / ปวช.", 
-                "อนุปริญญา / ปวส.", 
-                "ปริญญาตรี", 
-                "ปริญญาโท", 
-                "ปริญญาเอก"
-            ],
-            [eduJunior, eduSenior, eduDip, eduBachelor, eduMaster, eduDoctor],
-            ["#f59e0b", "#06b6d4", "#3b82f6", "#6366f1", "#8b5cf6", "#ec4899"],
-            textColor,
-            emptyColor,
-            "%",
-            true
-        );
-
-        // 5. จุดประสงค์หลักในการใช้งาน
-        const reasonKeep = rawUsersData.filter(u => {
-            const r = String(u.usageReason || u.reason || "").trim();
-            return r.includes("เก็บสะสมผลงานส่วนตัว") || r.includes("เก็บสะสม");
-        }).length;
-
-        const reasonApply = rawUsersData.filter(u => {
-            const r = String(u.usageReason || u.reason || "").trim();
-            return r.includes("ยื่นสมัครงาน") || r.includes("สมัครเรียน");
-        }).length;
-
-        const reasonShare = rawUsersData.filter(u => {
-            const r = String(u.usageReason || u.reason || "").trim();
-            return r.includes("แชร์ผลงานให้ผู้อื่นดู") || r.includes("แชร์ผลงาน");
-        }).length;
-
-        const reasonFriend = rawUsersData.filter(u => {
-            const r = String(u.usageReason || u.reason || "").trim();
-            return r.includes("ทดลองใช้งานตามเพื่อนแนะนำ") || r.includes("เพื่อนแนะนำ");
-        }).length;
-
-        reasonChartInstance = createDoughnutChart(
-            "reasonChart",
-            reasonChartInstance,
-            [
-                "เก็บสะสมผลงานส่วนตัว", 
-                "ใช้สำหรับยื่นสมัครงาน / สมัครเรียน", 
-                "ต้องการแชร์ผลงานให้ผู้อื่นดู", 
-                "ทดลองใช้งานตามเพื่อนแนะนำ"
-            ],
-            [reasonKeep, reasonApply, reasonShare, reasonFriend],
-            ["#0d9488", "#f43f5e", "#3b82f6", "#eab308"],
-            textColor,
-            emptyColor,
-            "%",
-            true
-        );
-
-        // 6. ช่วงอายุผู้ใช้งาน
-        let ageUnder9 = 0;   // ต่ำกว่า 9 ปี
-        let age9to11 = 0;    // 9 - 11 ปี
-        let age12to16 = 0;   // 12 - 16 ปี
-        let age17to30 = 0;   // 17 - 30 ปี
-        let age31to50 = 0;   // 31 - 50 ปี
-        let age50plus = 0;   // 50 ปีขึ้นไป
+        let activeUsers = 0;
+        let genderCounts = { male: 0, female: 0, lgbtq: 0, unspecific: 0 };
+        let eduCounts = { junior: 0, senior: 0, dip: 0, bachelor: 0, master: 0, doctor: 0 };
+        let reasonCounts = { keep: 0, apply: 0, share: 0, friend: 0 };
+        let ageCounts = { under9: 0, u9to11: 0, u12to16: 0, u17to30: 0, u31to50: 0, u50plus: 0 };
 
         rawUsersData.forEach(u => {
-            const calculatedAge = calculateAge(u.birthDate);
-            const userAge = calculatedAge !== null ? calculatedAge : (u.age ?? u.userAge ?? u.ageUser);
+            // 1. สถานะใช้งาน
+            const lastSeenTime = u.lastSeen || u.lastLogin || u.lastActive;
+            const lastSeenDate = lastSeenTime ? (lastSeenTime.toDate ? lastSeenTime.toDate() : new Date(lastSeenTime)) : null;
+            
+            const isOnline = u.isOnline === true && lastSeenDate && ((now - lastSeenDate.getTime()) <= THREE_MINUTES_MS);
+            if (isOnline) activeUsers++;
 
-            if (userAge !== null && userAge !== undefined && userAge !== "") {
-                const numericAge = Number(userAge);
-                
-                if (!isNaN(numericAge) && numericAge >= 0) {
-                    if (numericAge < 9) {
-                        ageUnder9++;
-                    } else if (numericAge >= 9 && numericAge <= 11) {
-                        age9to11++;
-                    } else if (numericAge >= 12 && numericAge <= 16) {
-                        age12to16++;
-                    } else if (numericAge >= 17 && numericAge <= 30) {
-                        age17to30++;
-                    } else if (numericAge >= 31 && numericAge <= 50) {
-                        age31to50++;
-                    } else if (numericAge > 50) {
-                        age50plus++;
-                    }
-                }
+            // 2. เพศ
+            const g = String(u.gender || "").toLowerCase();
+            if (g === "male" || g.includes("ชาย")) genderCounts.male++;
+            else if (g === "female" || g.includes("หญิง")) genderCounts.female++;
+            else if (g.includes("lgbt") || g.includes("ทางเลือก") || g.includes("อื่นๆ")) genderCounts.lgbtq++;
+            else genderCounts.unspecific++;
+
+            // 3. วุฒิการศึกษา
+            const e = String(u.education || "").trim();
+            if (e.includes("มัธยมศึกษาตอนต้น") || e.includes("ต่ำกว่า")) eduCounts.junior++;
+            else if (e.includes("มัธยมศึกษาตอนปลาย") || e.includes("ปวช")) eduCounts.senior++;
+            else if (e.includes("อนุปริญญา") || e.includes("ปวส")) eduCounts.dip++;
+            else if (e.includes("ปริญญาเอก")) eduCounts.doctor++;
+            else if (e.includes("ปริญญาโท")) eduCounts.master++;
+            else if (e === "ปริญญาตรี" || e.includes("ปริญญาตรี")) eduCounts.bachelor++;
+
+            // 4. จุดประสงค์
+            const r = String(u.usageReason || u.reason || "").trim();
+            if (r.includes("เก็บสะสม")) reasonCounts.keep++;
+            else if (r.includes("ยื่นสมัครงาน") || r.includes("สมัครเรียน")) reasonCounts.apply++;
+            else if (r.includes("แชร์ผลงาน")) reasonCounts.share++;
+            else if (r.includes("เพื่อนแนะนำ")) reasonCounts.friend++;
+
+            // 5. อายุ
+            const calcAge = calculateAge(u.birthDate);
+            const userAge = Number(calcAge !== null ? calcAge : (u.age ?? u.userAge ?? u.ageUser));
+            if (!isNaN(userAge) && userAge >= 0) {
+                if (userAge < 9) ageCounts.under9++;
+                else if (userAge <= 11) ageCounts.u9to11++;
+                else if (userAge <= 16) ageCounts.u12to16++;
+                else if (userAge <= 30) ageCounts.u17to30++;
+                else if (userAge <= 50) ageCounts.u31to50++;
+                else ageCounts.u50plus++;
             }
         });
 
-        ageChartInstance = createDoughnutChart(
-            "ageChart",
-            ageChartInstance,
-            ["ต่ำกว่า 9 ปี", "9-11 ปี", "12-16 ปี", "17-30 ปี", "31-50 ปี", "50 ปีขึ้นไป"],
-            [ageUnder9, age9to11, age12to16, age17to30, age31to50, age50plus],
-            ["#10b981", "#06b6d4", "#3b82f6", "#6366f1", "#f59e0b", "#ef4444"],
-            textColor,
-            emptyColor,
-            "%",
-            true
-        );
+        // Render Charts
+        charts.status = createDoughnutChart("userStatusChart", charts.status, ["กำลังใช้งาน", "ไม่อยู่ในระบบ"], [activeUsers, rawUsersData.length - activeUsers], ["#10b981", "#64748b"], textColor, emptyColor, "%", true);
+        charts.gender = createDoughnutChart("genderChart", charts.gender, ["ชาย", "หญิง", "LGBTQ+", "ไม่ระบุ"], [genderCounts.male, genderCounts.female, genderCounts.lgbtq, genderCounts.unspecific], ["#3b82f6", "#ec4899", "#8b5cf6", "#94a3b8"], textColor, emptyColor, "%", true);
+        charts.education = createDoughnutChart("educationChart", charts.education, ["มัธยมศึกษาตอนต้นหรือต่ำกว่า", "มัธยมศึกษาตอนปลาย / ปวช.", "อนุปริญญา / ปวส.", "ปริญญาตรี", "ปริญญาโท", "ปริญญาเอก"], [eduCounts.junior, eduCounts.senior, eduCounts.dip, eduCounts.bachelor, eduCounts.master, eduCounts.doctor], ["#f59e0b", "#06b6d4", "#3b82f6", "#6366f1", "#8b5cf6", "#ec4899"], textColor, emptyColor, "%", true);
+        charts.reason = createDoughnutChart("reasonChart", charts.reason, ["เก็บสะสมผลงานส่วนตัว", "ใช้สำหรับยื่นสมัครงาน / สมัครเรียน", "ต้องการแชร์ผลงานให้ผู้อื่นดู", "ทดลองใช้งานตามเพื่อนแนะนำ"], [reasonCounts.keep, reasonCounts.apply, reasonCounts.share, reasonCounts.friend], ["#0d9488", "#f43f5e", "#3b82f6", "#eab308"], textColor, emptyColor, "%", true);
+        charts.age = createDoughnutChart("ageChart", charts.age, ["ต่ำกว่า 9 ปี", "9-11 ปี", "12-16 ปี", "17-30 ปี", "31-50 ปี", "50 ปีขึ้นไป"], [ageCounts.under9, ageCounts.u9to11, ageCounts.u12to16, ageCounts.u17to30, ageCounts.u31to50, ageCounts.u50plus], ["#10b981", "#06b6d4", "#3b82f6", "#6366f1", "#f59e0b", "#ef4444"], textColor, emptyColor, "%", true);
     }
 
     // --- Helper สำหรับสร้าง Chart ---
@@ -657,8 +537,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 if (context.parsed !== null) {
                                     label += context.parsed + unit;
                                     if (convertToPercent) {
-                                        const originalValue = data[context.dataIndex];
-                                        label += ` (${originalValue} คน)`;
+                                        label += ` (${data[context.dataIndex]} คน)`;
                                     }
                                 }
                                 return label;
