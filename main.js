@@ -1,5 +1,5 @@
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { doc, getDoc, collection, addDoc, query, where, getDocs, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, getDoc, collection, addDoc, query, where, getDocs, deleteDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -65,7 +65,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // บังคับปิด Sidebar ทันทีที่โหลด
     closeSidebar();
 
     if (menuToggleBtn) {
@@ -98,7 +97,6 @@ document.addEventListener("DOMContentLoaded", () => {
             .replace(/'/g, "&#039;");
     }
 
-    // Helper: Safe URL Validator
     function sanitizeUrl(url) {
         if (!url) return "#";
         const trimmed = String(url).trim();
@@ -232,7 +230,6 @@ document.addEventListener("DOMContentLoaded", () => {
             card.style.border = isWhite ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.1)";
         });
 
-        // ปรับแต่งปุ่มปิด Modal (X) ให้เป็นสีแดงสดเด่นชัดตั้งแต่วินาทีแรก
         if (closeModalBtn) {
             closeModalBtn.style.position = "fixed";
             closeModalBtn.style.top = "20px";
@@ -295,6 +292,26 @@ document.addEventListener("DOMContentLoaded", () => {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUserId = user.uid;
+
+            // 📍 เพิ่มส่วนอัปเดตสถานะ Online / Offline ไปยัง Firestore
+            try {
+                const userRef = doc(db, "users", user.uid);
+                
+                await updateDoc(userRef, {
+                    isOnline: true,
+                    lastSeen: serverTimestamp()
+                });
+
+                window.addEventListener("beforeunload", () => {
+                    updateDoc(userRef, {
+                        isOnline: false,
+                        lastSeen: serverTimestamp()
+                    });
+                });
+            } catch (err) {
+                console.error("Error updating online status:", err);
+            }
+
             try {
                 const userDocSnap = await getDoc(doc(db, "users", user.uid));
                 if (userNameDisplay) {
@@ -418,12 +435,10 @@ document.addEventListener("DOMContentLoaded", () => {
             portfolioContainer.appendChild(card);
         });
 
-        // Hover Effect
         document.querySelectorAll(".view-file-btn").forEach(btn => addButtonHoverEffect(btn, "#4a5568", "#2d3748"));
         document.querySelectorAll(".view-link-btn").forEach(btn => addButtonHoverEffect(btn, "#2b6cb0", "#1d4ed8"));
     }
 
-    // --- Event Delegation สำหรับจัดการคลิกดูไฟล์ / ลบผลงาน ---
     if (portfolioContainer) {
         portfolioContainer.addEventListener("click", async (e) => {
             const viewBtn = e.target.closest(".view-file-btn");
