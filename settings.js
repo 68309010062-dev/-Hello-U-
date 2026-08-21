@@ -4,6 +4,8 @@ import { auth, db } from "./firebase-config.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     let currentUser = null;
+    let userRoleCollection = "users"; // ค่าเริ่มต้นสำหรับ Collection
+    let currentUserRole = "user";
 
     // 1. ดึง Element จากหน้าจอ
     const userNameDisplay = document.getElementById("userNameDisplay");
@@ -30,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const deleteConfirmInput = document.getElementById("deleteConfirmInput");
     const modalUserEmailText = document.getElementById("modalUserEmailText");
 
-    // 🔙 ฟังก์ชันปุ่มย้อนกลับ (เช็คว่ามาจาก admin-dashboard.html หรือ main.html)
+    // 🔙 ฟังก์ชันปุ่มย้อนกลับ (ตรวจสอบตามประเภทบัญชีและ Referrer)
     if (backToMainBtn) {
         backToMainBtn.addEventListener("mouseenter", () => {
             const currentBg = localStorage.getItem("userBackground") || "#0f0c1b";
@@ -42,11 +44,11 @@ document.addEventListener("DOMContentLoaded", () => {
         
         backToMainBtn.addEventListener("click", () => {
             const referrer = document.referrer;
-            // ตรวจสอบว่าเปิดมาจากหน้า Admin หรือไม่
-            if (referrer.includes("admin-dashboard.html")) {
+            if (currentUserRole === "superadmin" || currentUserRole === "super_admin" || referrer.includes("super-admin-dashboard.html")) {
+                window.location.href = "super-admin-dashboard.html";
+            } else if (currentUserRole === "admin" || referrer.includes("admin-dashboard.html")) {
                 window.location.href = "admin-dashboard.html";
             } else {
-                // ถ้าไม่ใช่ admin หรือเข้าผ่านหน้าหลัก ให้ย้อนกลับไป main.html
                 window.location.href = "main.html";
             }
         });
@@ -127,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const savedBg = localStorage.getItem("userBackground") || "linear-gradient(180deg, #0f0c1b 0%, #bd00ff 100%)";
     applyThemeStyles(savedBg);
 
-    // ตรวจสอบสถานะและดึงข้อมูลเดิมมาใส่ใน Input ฟอร์ม
+    // ตรวจสอบสถานะ ล็อกอิน และเช็กสิทธิ์ว่าเป็น Admin หรือ User
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
@@ -135,16 +137,28 @@ document.addEventListener("DOMContentLoaded", () => {
             let currentPhoto = user.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
             try {
-                const userDocRef = doc(db, "users", user.uid);
-                const userDocSnap = await getDoc(userDocRef);
+                // 🔍 1. ตรวจสอบจาก Collection "admins" ก่อน
+                const adminDocSnap = await getDoc(doc(db, "admins", user.uid));
                 
-                if (userDocSnap.exists()) {
-                    const data = userDocSnap.data();
+                if (adminDocSnap.exists()) {
+                    userRoleCollection = "admins";
+                    const data = adminDocSnap.data();
                     currentName = data.displayName || currentName;
                     currentPhoto = data.photoURL || currentPhoto;
+                    currentUserRole = data.role || "admin";
+                } else {
+                    // 🔍 2. ถ้าไม่พบใน admins ให้ดึงจาก Collection "users"
+                    const userDocSnap = await getDoc(doc(db, "users", user.uid));
+                    if (userDocSnap.exists()) {
+                        userRoleCollection = "users";
+                        const data = userDocSnap.data();
+                        currentName = data.displayName || currentName;
+                        currentPhoto = data.photoURL || currentPhoto;
+                        currentUserRole = data.role || "user";
+                    }
                 }
             } catch (error) { 
-                console.error("Error fetching user doc:", error);
+                console.error("Error fetching user profile doc:", error);
             }
 
             userNameDisplay.textContent = `ชื่อผู้ใช้: ${currentName}`;
@@ -221,7 +235,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 💾 บันทึกการเปลี่ยนแปลงข้อมูล
+    // 💾 บันทึกการเปลี่ยนแปลงข้อมูลลง Collection ที่ถูกต้อง (admins หรือ users)
     if (saveProfileBtn) {
         saveProfileBtn.addEventListener("click", async () => {
             if (!currentUser) return;
@@ -246,8 +260,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 await updateProfile(currentUser, profileUpdateObj);
 
-                const userDocRef = doc(db, "users", currentUser.uid);
-                await setDoc(userDocRef, {
+                // 📌 บันทึกข้อมูลไปยัง Collection Target (admins หรือ users)
+                const docRef = doc(db, userRoleCollection, currentUser.uid);
+                await setDoc(docRef, {
                     displayName: newName,
                     photoURL: newPhotoUrl || currentUser.photoURL || "",
                     email: currentUser.email,
@@ -325,6 +340,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // 🗑️ ลบบัญชีผู้ใช้พร้อมลบเอกสารใน Collection ที่ตรงกัน (admins หรือ users)
     if (finalDeleteBtn && deleteConfirmInput && deleteModal) {
         finalDeleteBtn.addEventListener("click", async () => {
             if (!currentUser) return;
@@ -342,6 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     finalDeleteBtn.disabled = true;
                     finalDeleteBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> กำลังลบข้อมูล...`;
 
+                    // ลบผลงานทั้งหมดของผู้ใช้ใน portfolios
                     const portfolioRef = collection(db, "portfolios");
                     const q = query(portfolioRef, where("userId", "==", currentUser.uid));
                     const querySnapshot = await getDocs(q);
@@ -354,7 +371,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         await batch.commit();
                     }
 
-                    await deleteDoc(doc(db, "users", currentUser.uid));
+                    // ลบเอกสารข้อมูลส่วนตัวตาม Collection (admins หรือ users)
+                    await deleteDoc(doc(db, userRoleCollection, currentUser.uid));
+                    
+                    // ลบบัญชีจาก Firebase Authentication
                     await deleteUser(currentUser);
 
                     alert("🎉 ลบบัญชีผู้ใช้และผลงานทั้งหมดของคุณเรียบร้อยแล้ว");
