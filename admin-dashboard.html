@@ -27,6 +27,13 @@
                 </div>
                 
                 <nav class="sidebar-menu">
+                    <!-- เมนูที่ 1: จัดการผู้ดูแลระบบ (สำหรับ Super Admin ซ่อนไว้เป็นค่าเริ่มต้น) -->
+                    <a href="super-admin-dashboard.html" class="menu-item" id="superAdminMenuItem" style="display: none;">
+                        <i class="fa-solid fa-user-shield"></i>
+                        <span class="menu-text">จัดการผู้ดูแลระบบ</span>
+                    </a>
+
+                    <!-- เมนูที่ 2: สถิติผู้ใช้ทั้งหมด (Active หน้าปัจจุบัน) -->
                     <a href="admin-dashboard.html" class="menu-item active">
                         <i class="fa-solid fa-chart-pie"></i>
                         <span class="menu-text">สถิติผู้ใช้ทั้งหมด</span>
@@ -55,49 +62,48 @@
         <!-- Main Content -->
         <main class="main-content">
             <div class="dashboard-header">
-                <h2 class="page-title">สถิติผู้ใช้งานทั้งหมด (User Only)</h2>
+                <h2 class="page-title" id="pageTitleText">สถิติผู้ใช้งานทั้งหมด</h2>
                 
-                <!-- สรุปจำนวนคนแบบ Pill -->
                 <!-- สรุปจำนวนคนแบบ Stat Cards -->
-<div class="stats-overview-grid">
-    <!-- Card 1: ผู้ใช้ทั้งหมด -->
-    <div class="stat-info-card">
-        <div class="stat-card-header">
-            <div class="stat-icon-box total-icon">
-                <i class="fa-solid fa-users"></i>
-            </div>
-            <span class="stat-badge total-badge">
-                <i class="fa-solid fa-database"></i> สมาชิกทั้งหมด (ไม่รวม ADMIN)
-            </span>
-        </div>
-        <div class="stat-card-body">
-            <span class="stat-label">ผู้ใช้ทั้งหมด</span>
-            <div class="stat-value-group">
-                <span id="statTotalUsers" class="stat-number">0</span>
-                <span class="stat-unit">คน</span>
-            </div>
-        </div>
-    </div>
+                <div class="stats-overview-grid">
+                    <!-- Card 1: ผู้ใช้ทั้งหมด -->
+                    <div class="stat-info-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon-box total-icon">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <span class="stat-badge total-badge" id="statBadgeText">
+    <i class="fa-solid fa-database"></i> สมาชิกทั้งหมด
+</span>
+                        </div>
+                        <div class="stat-card-body">
+                            <span class="stat-label">ผู้ใช้ทั้งหมด</span>
+                            <div class="stat-value-group">
+                                <span id="statTotalUsers" class="stat-number">0</span>
+                                <span class="stat-unit">คน</span>
+                            </div>
+                        </div>
+                    </div>
 
-    <!-- Card 2: กำลังใช้งาน -->
-    <div class="stat-info-card">
-        <div class="stat-card-header">
-            <div class="stat-icon-box active-icon">
-                <i class="fa-solid fa-user-check"></i>
-            </div>
-            <span class="stat-badge active-badge">
-                <i class="fa-solid fa-circle pulse-dot"></i> ในระบบ
-            </span>
-        </div>
-        <div class="stat-card-body">
-            <span class="stat-label">กำลังใช้งาน</span>
-            <div class="stat-value-group">
-                <span id="statActiveUsers" class="stat-number">0</span>
-                <span class="stat-unit">คน</span>
-            </div>
-        </div>
-    </div>
-</div>
+                    <!-- Card 2: กำลังใช้งาน -->
+                    <div class="stat-info-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon-box active-icon">
+                                <i class="fa-solid fa-user-check"></i>
+                            </div>
+                            <span class="stat-badge active-badge">
+                                <i class="fa-solid fa-circle pulse-dot"></i> ในระบบ
+                            </span>
+                        </div>
+                        <div class="stat-card-body">
+                            <span class="stat-label">กำลังใช้งาน</span>
+                            <div class="stat-value-group">
+                                <span id="statActiveUsers" class="stat-number">0</span>
+                                <span class="stat-unit">คน</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
             <!-- Charts Grid -->
             <div class="charts-grid-3x2">
