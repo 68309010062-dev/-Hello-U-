@@ -22,19 +22,22 @@
             
             <!-- ➕ เลือกสิทธิ์การใช้งาน (Role) -->
             <div class="role-selection">
-                <label for="regRole">ประเภทบัญชีผู้ใช้:</label>
-                <select id="regRole" required>
-                    <option value="user">👤 ผู้ใช้ทั่วไป (User)</option>
-                    <option value="admin">🛡️ ผู้ดูแลระบบ (Admin)</option>
-                </select>
-            </div>
+    <label for="regRole">ประเภทบัญชีผู้ใช้:</label>
+    <select id="regRole" required>
+        <option value="user">👤 ผู้ใช้ทั่วไป (User)</option>
+        <option value="admin">🛡️ ผู้ดูแลระบบ (Admin)</option>
+        <!-- นำตัวเลือก Super Admin ออกจากตรงนี้ -->
+    </select>
+</div>
 
-            <!-- 🪪 รหัสเจ้าหน้าที่สำหรับแอดมิน -->
+            <!-- 🪪 ข้อมูลเพิ่มเติมสำหรับ Admin / Super Admin -->
             <div id="adminKeyGroup" style="display: none; margin-top: 10px;">
                 <input type="text" id="adminOfficerId" placeholder="🪪 ใส่รหัสเจ้าหน้าที่ (Officer ID)...">
+                <input type="password" id="adminKey" placeholder="🔑 ใส่ Admin Key ยืนยันสิทธิ์...">
+                <small id="attemptWarning" style="color: #ef4444; display: block; margin-top: 4px; font-size: 12px;"></small>
             </div>
 
-            <button type="submit" id="submitRegBtn" class="btn">📝 บันทึกข้อมูลลงทะเบียน</button>
+            <button type="submit" id="submitRegBtn" class="btn" style="margin-top: 15px;">📝 บันทึกข้อมูลลงทะเบียน</button>
         </form>
 
         <p class="link-text">เป็นสมาชิกอยู่แล้ว? <a href="index.html">กลับไปหน้าเข้าสู่ระบบ</a></p>
