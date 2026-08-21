@@ -19,45 +19,60 @@ import {
 
 console.log("🚀 ระบบยืนยันตัวตน (Auth Module) เริ่มทำงาน");
 
+// 🔑 ค่าสำรอง (Fallback) กรณีดึงจาก Firestore ไม่สำเร็จ
+const DEFAULT_ADMIN_KEY = "ADMIN123";
+
+// 🔑 ฟังก์ชันดึง Admin Key ล่าสุดจาก Firestore
+async function getAdminKeyFromDB() {
+    let key = DEFAULT_ADMIN_KEY;
+    try {
+        const configDoc = await getDoc(doc(db, "system_settings", "config"));
+        if (configDoc.exists()) {
+            const data = configDoc.data();
+            if (data.adminKey) key = data.adminKey.trim();
+        }
+    } catch (error) {
+        console.warn("⚠️ ไม่สามารถดึง Admin Key จาก Firestore ได้ ใช้ค่าเริ่มต้นแทน:", error.message);
+    }
+    return key;
+}
+
 // -------------------------------------------------------------
-// 0. ฟังก์ชันช่วยเหลือและแปลภาษา (Helper & Translation Functions)
+// 0. ฟังก์ชันช่วยเหลือและแปลภาษา
 // -------------------------------------------------------------
 
-/**
- * 💡 ฟังก์ชันแปลงสถานะเป็นภาษาไทยสำหรับนำไปแสดงบนหน้า UI
- */
+function getDeviceId() {
+    let deviceId = localStorage.getItem("app_device_id");
+    if (!deviceId) {
+        deviceId = "dev_" + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+        localStorage.setItem("app_device_id", deviceId);
+    }
+    return deviceId;
+}
+
 export function translateStatus(status) {
     if (!status) return 'ไม่ระบุ';
     const s = status.toLowerCase();
     
     switch (s) {
-        case 'pending':
-        case 'รออนุมัติ':
-        case 'รอการอนุมัติ':
+        case 'pending': case 'รออนุมัติ': case 'รอการอนุมัติ':
             return '⏳ รอการอนุมัติ';
-        case 'approved':
-        case 'อนุมัติแล้ว':
-        case 'อนุมัติ':
+        case 'approved': case 'อนุมัติแล้ว': case 'อนุมัติ':
             return '✅ อนุมัติแล้ว';
-        case 'rejected':
-        case 'ไม่อนุมัติ':
-        case 'ปฏิเสธ':
+        case 'rejected': case 'ไม่อนุมัติ': case 'ปฏิเสธ':
             return '❌ ปฏิเสธการเข้าใช้งาน';
         default:
             return status;
     }
 }
 
-/**
- * 💡 ฟังก์ชันแปลงบทบาท (Role) เป็นภาษาไทยสำหรับแสดงผล
- */
 export function translateRole(role) {
     if (!role) return 'ไม่ระบุ';
     const r = role.toLowerCase();
     
     switch (r) {
-        case 'super_admin':
-            return '👑 ผู้ดูแลระบบหลัก';
+        case 'super_admin': case 'superadmin':
+            return '👑 ผู้ดูแลระบบสูงสุด';
         case 'admin':
             return '🛡️ ผู้ดูแลระบบ';
         case 'user':
@@ -67,58 +82,171 @@ export function translateRole(role) {
     }
 }
 
-async function isEmailBlocked(email) {
-    if (!email) return false;
+// 🔍 ฟังก์ชันตรวจสอบชื่อผู้ใช้ซ้ำกันในระบบ
+async function isUsernameTaken(username) {
     try {
-        const blockRef = doc(db, "blocked_users", email.toLowerCase());
-        const blockSnap = await getDoc(blockRef);
-        return blockSnap.exists();
+        const qUser = query(collection(db, "users"), where("displayName", "==", username));
+        const userSnap = await getDocs(qUser);
+        if (!userSnap.empty) return true;
+
+        const qAdmin = query(collection(db, "admins"), where("displayName", "==", username));
+        const adminSnap = await getDocs(qAdmin);
+        return !adminSnap.empty;
     } catch (error) {
-        console.warn("⚠️ ไม่สามารถตรวจสอบสถานะการถูกระงับได้:", error.message);
+        console.error("เกิดข้อผิดพลาดในการเช็กชื่อผู้ใช้ซ้ำ:", error);
         return false;
     }
 }
 
-// 🗑️ ฟังก์ชันจัดการลบข้อมูลใน Firestore
-async function deleteAdminData(officerId) {
+// 🛡️ ตรวจสอบการถูกบล็อกของอีเมลจาก Firestore เท่านั้น
+async function isEmailBlocked(email) {
+    if (!email) return false;
     try {
-        await deleteDoc(doc(db, "admins", officerId));
-        console.log(`🗑️ ลบข้อมูลผู้ดูแลระบบ (${officerId}) เรียบร้อยแล้ว`);
+        const emailLower = email.trim().toLowerCase();
+        const q = query(collection(db, "blocked_users"), where("email", "==", emailLower));
+        const querySnapshot = await getDocs(q);
+        
+        return !querySnapshot.empty;
+    } catch (error) {
+        console.warn("⚠️ ไม่สามารถตรวจสอบสถานะการถูกระงับจาก Firestore ได้:", error.message);
+        return false;
+    }
+}
+
+// 🔒 ฟังก์ชันปิดตัวเลือก Admin บน UI
+function disableAdminOptionsUI() {
+    const regRoleSelect = document.getElementById('regRole');
+    const adminKeyGroup = document.getElementById('adminKeyGroup');
+
+    if (regRoleSelect) {
+        regRoleSelect.value = "user";
+        const adminOpt = regRoleSelect.querySelector('option[value="admin"]');
+        const superOpt = regRoleSelect.querySelector('option[value="superadmin"]');
+        if (adminOpt) adminOpt.disabled = true;
+        if (superOpt) superOpt.disabled = true;
+    }
+    if (adminKeyGroup) {
+        adminKeyGroup.style.display = "none";
+    }
+}
+
+// 🛡️ ตรวจสอบสถานะการบล็อก Admin Key จาก Firestore Database เท่านั้น
+async function checkAdminKeyBlockStatus(officerId = "", username = "") {
+    const deviceId = getDeviceId();
+    const now = Date.now();
+
+    try {
+        let blockDocSnap = null;
+
+        if (officerId && username) {
+            const customDocId = `${officerId.trim()}_${username.trim()}`.replace(/[\/\\#?]/g, '-');
+            const docRef = doc(db, "blocked_registrations", customDocId);
+            blockDocSnap = await getDoc(docRef);
+        }
+
+        if (!blockDocSnap || !blockDocSnap.exists()) {
+            const q = query(collection(db, "blocked_registrations"), where("deviceId", "==", deviceId));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                blockDocSnap = querySnapshot.docs[0];
+            }
+        }
+
+        if (blockDocSnap && blockDocSnap.exists()) {
+            const blockData = blockDocSnap.data();
+            const blockRef = blockDocSnap.ref;
+
+            if (blockData.blockType === "temporary" && blockData.blockUntil) {
+                const blockUntilTime = blockData.blockUntil.toMillis ? blockData.blockUntil.toMillis() : Number(blockData.blockUntil);
+                if (now < blockUntilTime) {
+                    const daysLeft = Math.ceil((blockUntilTime - now) / (1000 * 60 * 60 * 24));
+                    disableAdminOptionsUI();
+                    return { isBlocked: true, daysLeft };
+                } else {
+                    await deleteDoc(blockRef);
+                }
+            }
+        }
+    } catch (error) {
+        console.warn("⚠️ เกิดข้อผิดพลาดในการตรวจสอบข้อมูลการบล็อกจาก Firestore:", error.message);
+    }
+
+    return { isBlocked: false };
+}
+
+// 🛡️ บันทึกการบล็อกลงใน Firestore Database เท่านั้น
+async function recordBlockToFirestore(role, email = "", displayName = "", officerId = "") {
+    const deviceId = getDeviceId();
+    const emailLower = email ? email.trim().toLowerCase() : "";
+    const cleanDisplayName = displayName.trim();
+    const cleanOfficerId = officerId.trim();
+
+    let customDocId = `${cleanOfficerId}_${cleanDisplayName}`.replace(/[\/\\#?]/g, '-');
+    if (!cleanOfficerId && !cleanDisplayName) {
+        customDocId = deviceId;
+    }
+
+    const blockRef = doc(db, "blocked_registrations", customDocId);
+    const blockedUserRef = emailLower ? doc(db, "blocked_users", customDocId) : null;
+
+    const ninetyDaysInMs = 90 * 24 * 60 * 60 * 1000;
+    const blockUntilTime = Date.now() + ninetyDaysInMs;
+
+    const tempData = {
+        docId: customDocId,
+        deviceId: deviceId,
+        displayName: cleanDisplayName || "ไม่ระบุ",
+        officerId: cleanOfficerId || "ไม่ระบุ",
+        email: emailLower || "ไม่ระบุ",
+        roleTarget: role,
+        reason: "กรอก Admin Key ผิดครบ 3 ครั้ง",
+        blockType: "temporary",
+        blockUntil: new Date(blockUntilTime),
+        createdAt: serverTimestamp()
+    };
+
+    try {
+        await setDoc(blockRef, tempData);
+        if (blockedUserRef) await setDoc(blockedUserRef, tempData);
+        console.log(`⛔ บันทึกการบล็อกลง Firestore สำเร็จ! Document ID: "${customDocId}"`);
+    } catch (error) {
+        console.error("❌ ไม่สามารถบันทึกข้อมูลการบล็อกลง Firestore ได้:", error);
+    }
+}
+
+async function deleteAdminData(docId) {
+    try {
+        await deleteDoc(doc(db, "admins", docId));
+        console.log(`🗑️ ลบข้อมูลผู้ดูแลระบบ (${docId}) เรียบร้อยแล้ว`);
     } catch (error) {
         console.error("เกิดข้อผิดพลาดในการลบเอกสารผู้ดูแลระบบ:", error);
     }
 }
 
-async function deleteUserData(uid) {
+async function deleteUserData(docId) {
     try {
-        await deleteDoc(doc(db, "users", uid));
-        console.log(`🗑️ ลบข้อมูลผู้ใช้งาน (${uid}) เรียบร้อยแล้ว`);
+        await deleteDoc(doc(db, "users", docId));
+        console.log(`🗑️ ลบข้อมูลผู้ใช้งาน (${docId}) เรียบร้อยแล้ว`);
     } catch (error) {
         console.error("เกิดข้อผิดพลาดในการลบเอกสารผู้ใช้งาน:", error);
     }
 }
 
-// 🗑️ ฟังก์ชันลบบัญชีผู้ใช้งานปัจจุบัน (ทั้ง Firestore และ Firebase Auth)
 export async function deleteCurrentUserAccount() {
     const user = auth.currentUser;
     if (!user) return;
 
     try {
-        // 1. ตรวจสอบและลบข้อมูลใน Firestore ก่อน
-        const qAdmin = query(collection(db, "admins"), where("uid", "==", user.uid));
-        const adminSnap = await getDocs(qAdmin);
+        const adminRef = doc(db, "admins", user.uid);
+        const adminSnap = await getDoc(adminRef);
 
-        if (!adminSnap.empty) {
-            const officerId = adminSnap.docs[0].id;
-            await deleteAdminData(officerId);
+        if (adminSnap.exists()) {
+            await deleteAdminData(user.uid);
         } else {
             await deleteUserData(user.uid);
         }
 
-        // 2. ลบบัญชีผู้ใช้จาก Firebase Auth
         await deleteUser(user);
-        console.log("✅ ลบบัญชีผู้ใช้งานสำเร็จ");
-        
         alert("🗑️ บัญชีของคุณถูกลบออกจากระบบเรียบร้อยแล้ว");
         window.location.href = 'index.html';
 
@@ -135,63 +263,80 @@ export async function deleteCurrentUserAccount() {
     }
 }
 
+// -------------------------------------------------------------
+// 🔄 ฟังก์ชันนำทางหลังเข้าสู่ระบบ (Redirect Logic)
+// -------------------------------------------------------------
 async function redirectAfterLogin(user) {
     try {
-        // 1. ตรวจสอบในคอลเลกชัน Admins ก่อน
-        const qAdmin = query(collection(db, "admins"), where("uid", "==", user.uid));
-        const adminQuerySnap = await getDocs(qAdmin);
+        // 1. ตรวจสอบว่าบัญชีถูกบล็อกหรือไม่
+        const isBlocked = await isEmailBlocked(user.email);
+        if (isBlocked) {
+            alert("❌ บัญชีอีเมลนี้ถูกระงับการใช้งานในระบบ! โปรดติดต่อผู้ดูแลระบบ");
+            await auth.signOut();
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // 2. ตรวจสอบข้อมูลในคอลเลกชัน "admins"
+        const adminDocRef = doc(db, "admins", user.uid);
+        const adminDocSnap = await getDoc(adminDocRef);
         
-        if (!adminQuerySnap.empty) {
-            const adminDoc = adminQuerySnap.docs[0];
-            const adminData = adminDoc.data();
+        if (adminDocSnap.exists()) {
+            const adminData = adminDocSnap.data();
+            const currentRole = (adminData.role || "").toLowerCase();
             const currentStatus = (adminData.status || "").toLowerCase();
 
-            // ⚡ เช็กสถานะรอการอนุมัติ (รองรับทั้งภาษาอังกฤษและภาษาไทย)
-            if (currentStatus === "pending" || currentStatus === "รออนุมัติ" || currentStatus === "รอการอนุมัติ") {
-                await auth.signOut();
-                showAdminPendingModal(adminData.displayName || "ผู้สมัครแอดมิน");
-                return;
-            }
-
-            // ⚡ บัญชีที่โดนปฏิเสธ (Rejected) จะทำการลบบัญชีทิ้งอัตโนมัติ
-            if (currentStatus === "rejected" || currentStatus === "ไม่อนุมัติ" || currentStatus === "ปฏิเสธ") {
-                alert("❌ คำขอสิทธิ์ผู้ดูแลระบบของคุณไม่ได้รับการอนุมัติ ระบบจะลบข้อมูลบัญชีนี้โดยอัตโนมัติ");
-                
-                await deleteAdminData(adminDoc.id);
-                
-                try {
-                    await deleteUser(user);
-                } catch (e) {
+            // เช็กการอนุมัติสำหรับ Admin (ยกเว้น Super Admin)
+            if (currentRole !== "superadmin" && currentRole !== "super_admin") {
+                if (currentStatus === "pending" || currentStatus === "รออนุมัติ" || currentStatus === "รอการอนุมัติ") {
                     await auth.signOut();
+                    showAdminPendingModal(adminData.displayName || "ผู้สมัครแอดมิน");
+                    return;
                 }
 
-                window.location.href = 'index.html';
+                if (currentStatus === "rejected" || currentStatus === "ไม่อนุมัติ" || currentStatus === "ปฏิเสธ") {
+                    alert("❌ คำขอสิทธิ์ผู้ดูแลระบบของคุณไม่ได้รับการอนุมัติ ระบบจะลบข้อมูลบัญชีนี้โดยอัตโนมัติ");
+                    
+                    await deleteAdminData(user.uid);
+                    try {
+                        await deleteUser(user);
+                    } catch (e) {
+                        await auth.signOut();
+                    }
+
+                    window.location.href = 'index.html';
+                    return;
+                }
+            }
+
+            if (adminData.isProfileComplete !== true) {
+                window.location.href = 'questionnaire.html';
                 return;
             }
 
-            // ⚡ แยกทางไประหว่าง Super Admin และ Admin ทั่วไป
-            if (adminData.role === "super_admin") {
-                window.location.href = 'super-admin.html';
+            if (currentRole === "superadmin" || currentRole === "super_admin") {
+                window.location.href = 'super-admin-dashboard.html';
             } else {
                 window.location.href = 'admin-dashboard.html';
             }
             return;
         }
 
-        // 2. หากไม่ใช่ Admin ตรวจสอบในคอลเลกชัน Users
-        const userRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userRef);
+        // 3. ตรวจสอบข้อมูลในคอลเลกชัน "users"
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
         
-        if (userDoc.exists()) {
-            const userData = userDoc.data();
+        if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            
             if (userData.isProfileComplete === true) {
                 window.location.href = 'main.html';
             } else {
                 window.location.href = 'questionnaire.html';
             }
         } else {
-            // กรณีเป็น User ใหม่ที่เพิ่งเข้าผ่าน Google และยังไม่มี Document ใน Firestore
-            await setDoc(userRef, {
+            await setDoc(userDocRef, {
+                uid: user.uid,
                 authProvider: user.providerData[0]?.providerId || "google.com",
                 displayName: user.displayName || "ผู้ใช้งาน",
                 email: user.email.toLowerCase(),
@@ -254,52 +399,46 @@ function showAdminPendingModal(username) {
 
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    document.getElementById('closePendingBtn')?.addEventListener('click', () => {
-        const modal = document.getElementById('pendingAdminModal');
-        if (modal) modal.remove();
+    const closeModal = () => {
+        document.getElementById('pendingAdminModal')?.remove();
         window.location.href = 'index.html';
-    });
+    };
 
-    const modalElement = document.getElementById('pendingAdminModal');
-    modalElement?.addEventListener('click', (e) => {
-        if (e.target === modalElement) {
-            modalElement.remove();
-            window.location.href = 'index.html';
-        }
+    document.getElementById('closePendingBtn')?.addEventListener('click', closeModal);
+    document.getElementById('pendingAdminModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'pendingAdminModal') closeModal();
     });
 }
 
 // -------------------------------------------------------------
-// 1. ซ่อน/แสดง ตรวจสอบ Role (ทำใน Register Page)
+// Event Listeners การทำงานฝั่ง UI
 // -------------------------------------------------------------
-const regRoleSelect = document.getElementById('regRole');
-const adminKeyGroup = document.getElementById('adminKeyGroup');
+let failedAttemptsCount = 0;
 
-if (regRoleSelect && adminKeyGroup) {
-    regRoleSelect.addEventListener('change', (e) => {
-        if (e.target.value === 'admin') {
-            adminKeyGroup.style.display = 'block';
-        } else {
-            adminKeyGroup.style.display = 'none';
-        }
-    });
-}
+document.addEventListener('DOMContentLoaded', () => {
+    const regRoleSelect = document.getElementById('regRole');
+    const adminKeyGroup = document.getElementById('adminKeyGroup');
 
-// -------------------------------------------------------------
-// 2. ระบบเข้าสู่ระบบปกติ (Email/Password)
-// -------------------------------------------------------------
+    if (regRoleSelect && adminKeyGroup) {
+        regRoleSelect.addEventListener('change', (e) => {
+            const role = e.target.value;
+            adminKeyGroup.style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none';
+        });
+    }
+
+    checkAdminKeyBlockStatus();
+});
+
+// 2. ระบบเข้าสู่ระบบ (index.html)
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
     loginForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         
-        const emailInput = document.getElementById('loginEmail');
-        const passwordInput = document.getElementById('loginPassword');
-        
-        if (!emailInput || !passwordInput) return;
+        const email = document.getElementById('loginEmail')?.value.trim().toLowerCase();
+        const password = document.getElementById('loginPassword')?.value;
 
-        const email = emailInput.value.trim().toLowerCase();
-        const password = passwordInput.value;
+        if (!email || !password) return;
 
         const isBlocked = await isEmailBlocked(email);
         if (isBlocked) {
@@ -318,54 +457,79 @@ if (loginForm) {
     });
 }
 
-// -------------------------------------------------------------
-// 3. ระบบลงทะเบียน (Register Form)
-// -------------------------------------------------------------
+// 3. ระบบลงทะเบียน (register.html)
 const registerForm = document.getElementById('registerForm');
-
 if (registerForm) {
     registerForm.addEventListener('submit', async (event) => {
         event.preventDefault();
 
         const submitRegBtn = document.getElementById('submitRegBtn');
-        const regNameEl = document.getElementById('regName');
-        const regEmailEl = document.getElementById('regEmail');
-        const regPasswordEl = document.getElementById('regPassword');
-        const regPasswordConfirmEl = document.getElementById('regPasswordConfirm');
-        const adminOfficerIdInput = document.getElementById('adminOfficerId');
+        const username = document.getElementById('regName')?.value.trim();
+        const email = document.getElementById('regEmail')?.value.trim().toLowerCase();
+        const password = document.getElementById('regPassword')?.value;
+        const passwordConfirm = document.getElementById('regPasswordConfirm')?.value;
+        const role = document.getElementById('regRole')?.value || 'user';
+        const officerIdInput = document.getElementById('adminOfficerId')?.value?.trim() || '';
+        const inputAdminKey = document.getElementById('adminKey')?.value?.trim() || '';
+        const attemptWarning = document.getElementById('attemptWarning');
 
-        if (!regNameEl || !regEmailEl || !regPasswordEl || !regPasswordConfirmEl) {
-            alert("❌ โครงสร้างฟอร์มไม่สมบูรณ์ ตรวจสอบ id ใน HTML");
+        if (!username || !email || !password || !passwordConfirm) {
+            alert("❌ กรุณากรอกข้อมูลในช่องที่จำเป็นให้ครบถ้วน");
             return;
         }
 
-        const username = regNameEl.value.trim();
-        const email = regEmailEl.value.trim().toLowerCase();
-        const password = regPasswordEl.value;
-        const passwordConfirm = regPasswordConfirmEl.value;
-        
-        const role = regRoleSelect?.value || 'user';
-        const officerIdInput = adminOfficerIdInput?.value?.trim() || '';
+        if (password !== passwordConfirm) { alert("❌ รหัสผ่านยืนยันไม่ตรงกัน"); return; }
+        if (password.length < 6) { alert("❌ รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร"); return; }
 
-        if (!email) {
-            alert("❌ กรุณากรอกอีเมล");
+        const isDuplicateUser = await isUsernameTaken(username);
+        if (isDuplicateUser) {
+            alert("❌ ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาใช้ชื่ออื่น");
             return;
         }
 
-        if (password !== passwordConfirm) { 
-            alert("❌ รหัสผ่านยืนยันไม่ตรงกัน"); 
-            return; 
-        }
+        if (role === 'admin' || role === 'superadmin') {
+            const blockStatus = await checkAdminKeyBlockStatus(officerIdInput, username);
+            
+            if (blockStatus.isBlocked) {
+                disableAdminOptionsUI();
+                alert(`⛔ บัญชีหรืออุปกรณ์นี้ถูกระงับสิทธิ์การสมัคร Admin ชั่วคราว (เหลือเวลาอีกประมาณ ${blockStatus.daysLeft} วัน)\n\nระบบจะปรับสิทธิ์เป็นผู้ใช้ทั่วไป`);
+                return;
+            }
 
-        if (password.length < 6) {
-            alert("❌ รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
-            return;
-        }
+            if (!officerIdInput) {
+                alert("❌ กรุณากรอกรหัสเจ้าหน้าที่");
+                document.getElementById('adminOfficerId')?.focus();
+                return;
+            }
 
-        if (role === 'admin' && !officerIdInput) {
-            alert("❌ กรุณากรอกรหัสเจ้าหน้าที่");
-            if (adminOfficerIdInput) adminOfficerIdInput.focus();
-            return;
+            if (!inputAdminKey) {
+                alert("❌ กรุณากรอก Admin Key ยืนยันสิทธิ์");
+                document.getElementById('adminKey')?.focus();
+                return;
+            }
+
+            // 🟢 ดึง Admin Key จาก Firestore มาตรวจสอบสิทธิ์
+            const dbAdminKey = await getAdminKeyFromDB();
+
+            if (inputAdminKey !== dbAdminKey) {
+                failedAttemptsCount++;
+
+                if (failedAttemptsCount >= 3) {
+                    await recordBlockToFirestore(role, email, username, officerIdInput);
+                    alert(`⛔ คุณ (${username}) ใส่ Admin Key ผิดครบ 3 ครั้ง!\n\nระบบได้ทำการบันทึกบล็อกการสมัครสิทธิ์ Admin ของคุณเป็นเวลา 90 วันแล้ว`);
+                    disableAdminOptionsUI();
+                    return;
+                } else {
+                    const remaining = 3 - failedAttemptsCount;
+                    if (attemptWarning) {
+                        attemptWarning.textContent = `⚠️ Admin Key ไม่ถูกต้อง! (เตือนครั้งที่ ${failedAttemptsCount}/3 - หากผิดครบ 3 ครั้งจะถูกบล็อก 90 วัน)`;
+                    }
+                    alert(`❌ Admin Key ไม่ถูกต้อง! (เหลือโอกาสอีก ${remaining} ครั้ง หากผิดครบระบบจะบันทึกบล็อกทันที)`);
+                    return;
+                }
+            }
+
+            failedAttemptsCount = 0;
         }
 
         if (submitRegBtn) {
@@ -377,23 +541,36 @@ if (registerForm) {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            if (role === 'admin') {
-                await setDoc(doc(db, "admins", officerIdInput), {
+            if (role === 'admin' || role === 'superadmin') {
+                const isSuperAdmin = (role === 'superadmin');
+                
+                const adminDocData = {
                     uid: user.uid,
                     authProvider: "email/password",
                     displayName: username,
                     email: email,
                     officerId: officerIdInput,
-                    role: "admin",
-                    status: "pending",
+                    role: role,
+                    // 🛠️ แก้ไข: หากเป็น superadmin ให้ approved ทันที แต่ถ้าเป็น admin ทั่วไปให้เป็น pending
+                    status: isSuperAdmin ? 'approved' : 'pending',
+                    isProfileComplete: false,
                     createdAt: serverTimestamp()
-                });
+                };
 
-                await auth.signOut();
-                showAdminPendingModal(username);
+                await setDoc(doc(db, "admins", user.uid), adminDocData);
+                
+                // 🛠️ แก้ไข: ถ้าเป็น admin ปกติ ให้ Sign out แล้วแสดง Modal รออนุมัติ
+                if (!isSuperAdmin) {
+                    await auth.signOut();
+                    showAdminPendingModal(username);
+                } else {
+                    alert("🎉 สมัครสมาชิกผู้ดูแลระบบสูงสุดสำเร็จ!");
+                    window.location.href = 'questionnaire.html';
+                }
 
             } else {
                 await setDoc(doc(db, "users", user.uid), {
+                    uid: user.uid,
                     authProvider: "email/password",
                     displayName: username,
                     email: email,
@@ -422,9 +599,7 @@ function resetSubmitButton(btn) {
     }
 }
 
-// -------------------------------------------------------------
 // 4. ระบบเข้าสู่ระบบด้วย Google
-// -------------------------------------------------------------
 const googleLoginBtn = document.getElementById('googleLoginBtn');
 if (googleLoginBtn) {
     googleLoginBtn.addEventListener('click', async () => {
@@ -450,22 +625,17 @@ if (googleLoginBtn) {
     });
 }
 
-// -------------------------------------------------------------
 // 5. ปุ่มร้องขอลบบัญชีด้วยตนเอง
-// -------------------------------------------------------------
 const deleteAccountBtn = document.getElementById('deleteAccountBtn');
 if (deleteAccountBtn) {
     deleteAccountBtn.addEventListener('click', async () => {
-        const confirmDelete = confirm("⚠️ คุณแน่ใจหรือไม่ที่จะลบบัญชีนี้? การกระทำนี้ไม่สามารถย้อนกลับได้");
-        if (confirmDelete) {
+        if (confirm("⚠️ คุณแน่ใจหรือไม่ที่จะลบบัญชีนี้? การกระทำนี้ไม่สามารถย้อนกลับได้")) {
             await deleteCurrentUserAccount();
         }
     });
 }
 
-// -------------------------------------------------------------
 // 6. ฟังก์ชันแปล Error Code จาก Firebase เป็นภาษาไทย
-// -------------------------------------------------------------
 function translateAuthError(errorCode) {
     switch (errorCode) {
         case 'auth/email-already-in-use':
